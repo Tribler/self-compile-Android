@@ -6,11 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import org.eclipse.jdt.core.compiler.batch.BatchCompiler;
 
 public class Util {
 
@@ -71,6 +68,15 @@ public class Util {
 			}
 		}
 		path.delete();
+	}
+
+	public static void listRecursive(File path) {
+		if (path.isDirectory()) {
+			for (File child : path.listFiles()) {
+				listRecursive(child);
+			}
+		}
+		System.out.println(path.getAbsolutePath());
 	}
 
 }

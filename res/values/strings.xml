@@ -3,5 +3,6 @@
 
     <string name="app_name">SelfCompileApp</string>
     <string name="btnCompile">Compile</string>
+    <string name="btnDex">Dex</string>
 
 </resources>
