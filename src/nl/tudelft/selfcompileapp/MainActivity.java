@@ -4,8 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-
-import org.eclipse.jdt.core.compiler.batch.BatchCompiler;
+import java.util.ArrayList;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -16,8 +15,9 @@ import android.widget.Button;
 
 public class MainActivity extends Activity {
 
-	private final String proj_name = "demo_android";
 	private final String target_platform = "android-22";
+	private final String proj_name = "demo_android";
+	private final String[] proj_libs = { "demolib.jar" };
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -107,13 +107,13 @@ public class MainActivity extends Activity {
 			File dirProject = new File(dirDownloads, proj_name);
 
 			System.out.println("// REMOVE R.JAVA");
-			File javaR = new File(dirProject, "/src/org/me/androiddemo/R.java");
+			File javaR = new File(dirProject, "/gen/R.java");
 			javaR.delete();
 
 			System.out.println("// RUN AAPT & CREATE R.JAVA"); // TODO
 
 			// aapt p -f -v -M AndroidManifest.xml -F ./build/resources.res -I
-			// ~/system/classes/android.jar -S res/ -J src/org/me/androiddemo
+			// ~/system/classes/android.jar -S res/ -J gen
 
 			// DEBUG
 			Util.listRecursive(dirProject);
@@ -141,22 +141,25 @@ public class MainActivity extends Activity {
 			String strBuild = strProj + "build" + File.separator;
 			String strClass = strBuild + "classes" + File.separator;
 
-			String strSrc = strProj + "src" + File.separator;
 			String strGen = strProj + "gen" + File.separator;
+			String strSrc = strProj + "src" + File.separator;
+
 			String strBoot = strRoot + target_platform + ".jar";
-			String strClassPath = strSrc;
-			strClassPath += File.pathSeparator + strGen;
-			strClassPath += File.pathSeparator + strLibs + "demolib.jar";
-			String strMain = strSrc + "org/me/androiddemo/MainActivity.java";
+			String strClassPath = strSrc + File.pathSeparator + strGen;
+			for (String lib : proj_libs) {
+				strClassPath += File.pathSeparator + strLibs + lib;
+			}
 
 			System.out.println("// COMPILE SOURCE RECURSIVE");
-			BatchCompiler.compile(
+			org.eclipse.jdt.core.compiler.batch.BatchCompiler.compile(
 					"-1.5 -showversion -verbose -deprecation -bootclasspath "
 							+ strBoot + " -cp " + strClassPath + " -d "
-							+ strClass + " " + strMain, new PrintWriter(
-							System.out), new PrintWriter(System.err), null);
+							+ strClass + " " + strGen + " " + strSrc,
+					new PrintWriter(System.out), new PrintWriter(System.err),
+					null);
 
 			// DEBUG
+			Util.listRecursive(new File(strGen));
 			Util.listRecursive(new File(strBuild));
 
 			return null;
@@ -185,15 +188,26 @@ public class MainActivity extends Activity {
 				String strClass = strBuild + "classes" + File.separator;
 
 				String strLibsDex = strBuild + "dexedLibs" + File.separator;
-				String strClassDex = strBuild + proj_name + ".dex";
 
-				System.out.println("// PRE DEX LIBS"); // TODO
-				// dx --dex --output=dexed.jar hello.jar
+				System.out.println("// PRE DEX LIBS");
+				for (String lib : proj_libs) {
+					com.android.dx.command.dexer.Main.main(new String[] {
+							"--verbose",
+							"--output=" + strLibsDex + lib + ".dex",
+							strLibs + lib });
+				}
 
 				System.out.println("// DEX CLASSES");
-				com.android.dx.command.dexer.Main.main(new String[] {
-						"--verbose", "--no-strict", "--output=" + strClassDex,
-						strClass, strLibs + "demolib.jar" });
+				ArrayList<String> lstDexArgs = new ArrayList<String>();
+				lstDexArgs.add("--verbose");
+				lstDexArgs.add("--output=" + strBuild + proj_name + ".dex");
+				lstDexArgs.add(strClass);
+				for (String lib : proj_libs) {
+					lstDexArgs.add(strLibs + lib);
+				}
+				String[] arrDexArgs = new String[lstDexArgs.size()];
+				lstDexArgs.toArray(arrDexArgs);
+				com.android.dx.command.dexer.Main.main(arrDexArgs);
 
 				System.out.println("// MERGE DEX"); // TODO
 
