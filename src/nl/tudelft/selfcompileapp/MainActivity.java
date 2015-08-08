@@ -43,20 +43,23 @@ public class MainActivity extends Activity {
 		@Override
 		protected Object doInBackground(Object... params) {
 			try {
-				System.out.println("// CLEAR OUTPUT FOLDER");
+				System.out.println("// COPY ANDROID PLATFORM");
 				File dirDownloads = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+				File jarAndroid = new File(dirDownloads, "android-22.jar");
+				if (!jarAndroid.exists()) {
+					InputStream zipAndroidPlatform = getAssets().open(
+							"android-22.zip");
+					Util.unZip(zipAndroidPlatform, dirDownloads);
+				}
+
+				System.out.println("// CLEAR OUTPUT FOLDER");
 				File dirProject = new File(dirDownloads, "demo_android");
 				Util.deleteRecursive(dirProject);
 
 				System.out.println("// COPY PROJECT SOURCE");
 				InputStream zipPrjSrc = getAssets().open("demo_android.zip");
 				Util.unZip(zipPrjSrc, dirDownloads);
-
-				System.out.println("// COPY ANDROID PLATFORM");
-				InputStream zipAndroidPlatform = getAssets().open(
-						"android-22.zip");
-				Util.unZip(zipAndroidPlatform, dirDownloads);
 
 				// TODO REMOVE R.JAVA
 
@@ -66,32 +69,13 @@ public class MainActivity extends Activity {
 
 				System.out.println("// COMPILE SOURCE RECURSIVE");
 
-				// -verbose
-				// -deprecation
-				// -extdirs \"\"
-				// -1.5
-				// -bootclasspath
-				// {AndroidJarPath}:
-				// {root}libs/ecj.jar:
-				// {root}libs/dx_ta.jar:
-				// {root}libs/bsh.jar:
-				// {root}libs/sdklib_ta.jar:
-				// {root}libs/androidprefs.jar:
-				// {root}libs/zipsigner-lib_all.jar
-				// -classpath
-				// {root}src:
-				// {root}gen
-				// -d {stScriptPath}bin
-				// {root}src/com/t_arn/MainActivity.java
-
 				String strRoot = dirDownloads.getAbsolutePath();
 				String strProj = dirProject.getAbsolutePath();
-				String strArgs = " -verbose -1.5";
-				strArgs += " -bootclasspath \"" + strRoot + "/android-22.jar:"
-						+ strRoot + "/android-support-v13.jar:" + strRoot
-						+ "/android-support-annotations.jar\"";
-				strArgs += " -cp \"" + strProj + "/libs/demolib.jar:" + strProj
-						+ "/src:" + strProj + "/gen\"";
+				String strArgs = " -1.5 -showversion -verbose -deprecation";
+				strArgs += " -bootclasspath \"" + strRoot + "/android-22.jar\"";
+				strArgs += " -cp \"" + strProj + "/libs/demolib.jar"
+						+ File.pathSeparator + strProj + "/src"
+						+ File.pathSeparator + strProj + "/gen\"";
 				strArgs += " -d \"" + strProj + "/build/classes\""; // output
 				strArgs += " \"" + strProj
 						+ "/src/org/me/androiddemo/MainActivity.java\"";
