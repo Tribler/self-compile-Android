@@ -16,15 +16,28 @@ import android.widget.Button;
 
 public class MainActivity extends Activity {
 
+	private final String proj_name = "demo_android";
+	private final String target_platform = "android-22";
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 	}
 
+	public void clean(View btnClean) {
+		btnClean.setEnabled(false);
+		new CleanBuild().execute();
+	}
+
+	public void aapt(View btnAapt) {
+		btnAapt.setEnabled(false);
+		new PackAssets().execute();
+	}
+
 	public void compile(View btnCompile) {
 		btnCompile.setEnabled(false);
-		new CompileSource().execute();
+		new CompileJava().execute();
 	}
 
 	public void dex(View btnDex) {
@@ -32,7 +45,85 @@ public class MainActivity extends Activity {
 		new DexClasses().execute();
 	}
 
-	private class CompileSource extends AsyncTask<Object, Object, Object> {
+	private class CleanBuild extends AsyncTask<Object, Object, Object> {
+
+		@Override
+		protected void onPostExecute(Object result) {
+			Button btnClean = (Button) findViewById(R.id.btnClean);
+			btnClean.setEnabled(true);
+		}
+
+		@Override
+		protected Object doInBackground(Object... params) {
+			try {
+				File dirDownloads = Environment
+						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+				File dirProject = new File(dirDownloads, proj_name);
+
+				System.out.println("// COPY ANDROID PLATFORM");
+				File jarAndroid = new File(dirDownloads, target_platform
+						+ ".jar");
+				if (!jarAndroid.exists()) {
+
+					InputStream zipAndroidPlatform = getAssets().open(
+							target_platform + ".zip");
+					Util.unZip(zipAndroidPlatform, dirDownloads);
+				}
+
+				System.out.println("// DELETE PROJECT FOLDER");
+				Util.deleteRecursive(dirProject);
+
+				// DEBUG
+				Util.listRecursive(dirDownloads);
+
+				System.out.println("// EXTRACT PROJECT");
+				InputStream zipProjSrc = getAssets().open(proj_name + ".zip");
+				Util.unZip(zipProjSrc, dirDownloads);
+
+				// DEBUG
+				Util.listRecursive(dirProject);
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+	}
+
+	private class PackAssets extends AsyncTask<Object, Object, Object> {
+
+		@Override
+		protected void onPostExecute(Object result) {
+			Button btnAapt = (Button) findViewById(R.id.btnAapt);
+			btnAapt.setEnabled(true);
+		}
+
+		@Override
+		protected Object doInBackground(Object... params) {
+			File dirDownloads = Environment
+					.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+			File dirProject = new File(dirDownloads, proj_name);
+
+			System.out.println("// REMOVE R.JAVA");
+			File javaR = new File(dirProject, "/src/org/me/androiddemo/R.java");
+			javaR.delete();
+
+			System.out.println("// RUN AAPT & CREATE R.JAVA"); // TODO
+
+			// aapt p -f -v -M AndroidManifest.xml -F ./build/resources.res -I
+			// ~/system/classes/android.jar -S res/ -J src/org/me/androiddemo
+
+			// DEBUG
+			Util.listRecursive(dirProject);
+
+			return null;
+		}
+
+	}
+
+	private class CompileJava extends AsyncTask<Object, Object, Object> {
 
 		@Override
 		protected void onPostExecute(Object result) {
@@ -42,61 +133,32 @@ public class MainActivity extends Activity {
 
 		@Override
 		protected Object doInBackground(Object... params) {
-			try {
-				File dirDownloads = Environment
-						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+			File dirDownloads = Environment
+					.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+			String strRoot = dirDownloads.getAbsolutePath() + File.separator;
+			String strProj = strRoot + proj_name + File.separator;
+			String strLibs = strProj + "libs" + File.separator;
+			String strBuild = strProj + "build" + File.separator;
+			String strClass = strBuild + "classes" + File.separator;
 
-				System.out.println("// COPY ANDROID PLATFORM");
+			String strSrc = strProj + "src" + File.separator;
+			String strGen = strProj + "gen" + File.separator;
+			String strBoot = strRoot + target_platform + ".jar";
+			String strClassPath = strSrc;
+			strClassPath += File.pathSeparator + strGen;
+			strClassPath += File.pathSeparator + strLibs + "demolib.jar";
+			String strMain = strSrc + "org/me/androiddemo/MainActivity.java";
 
-				File jarAndroid = new File(dirDownloads, "android-22.jar");
-				if (!jarAndroid.exists()) {
-					InputStream zipAndroidPlatform = getAssets().open(
-							"android-22.zip");
+			System.out.println("// COMPILE SOURCE RECURSIVE");
+			BatchCompiler.compile(
+					"-1.5 -showversion -verbose -deprecation -bootclasspath "
+							+ strBoot + " -cp " + strClassPath + " -d "
+							+ strClass + " " + strMain, new PrintWriter(
+							System.out), new PrintWriter(System.err), null);
 
-					Util.unZip(zipAndroidPlatform, dirDownloads);
-				}
+			// DEBUG
+			Util.listRecursive(new File(strBuild));
 
-				System.out.println("// CLEAR OUTPUT FOLDER");
-
-				File dirProject = new File(dirDownloads, "demo_android");
-				Util.deleteRecursive(dirProject);
-
-				System.out.println("// COPY PROJECT SOURCE");
-
-				InputStream zipProjSrc = getAssets().open("demo_android.zip");
-				Util.unZip(zipProjSrc, dirDownloads);
-
-				System.out.println("// REMOVE R.JAVA"); // TODO
-
-				System.out.println("// RUN AAPT & CREATE R.JAVA"); // TODO
-
-				File dirGen = new File(dirProject, "gen");
-				dirGen.mkdir();
-
-				System.out.println("// COMPILE SOURCE RECURSIVE");
-
-				String strRoot = dirDownloads.getAbsolutePath();
-				String strProj = dirProject.getAbsolutePath();
-
-				String strArgs = " -1.5 -showversion -verbose -deprecation";
-				strArgs += " -bootclasspath " + strRoot + "/android-22.jar";
-				strArgs += " -cp " + strProj + "/libs/demolib.jar"
-						+ File.pathSeparator + strProj + "/src"
-						+ File.pathSeparator + strProj + "/gen";
-				strArgs += " -d " + strProj + "/build/classes";
-				strArgs += " " + strProj
-						+ "/src/org/me/androiddemo/MainActivity.java";
-
-				BatchCompiler.compile(strArgs, new PrintWriter(System.out),
-						new PrintWriter(System.err), null);
-
-				// DEBUG
-				Util.listRecursive(new File(dirProject, "build"));
-
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 			return null;
 		}
 
@@ -115,23 +177,28 @@ public class MainActivity extends Activity {
 			try {
 				File dirDownloads = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				String strProj = dirDownloads.getAbsolutePath()
-						+ "/demo_android";
+				String strRoot = dirDownloads.getAbsolutePath()
+						+ File.separator;
+				String strProj = strRoot + proj_name + File.separator;
+				String strLibs = strProj + "libs" + File.separator;
+				String strBuild = strProj + "build" + File.separator;
+				String strClass = strBuild + "classes" + File.separator;
+
+				String strLibsDex = strBuild + "dexedLibs" + File.separator;
+				String strClassDex = strBuild + proj_name + ".dex";
 
 				System.out.println("// PRE DEX LIBS"); // TODO
 				// dx --dex --output=dexed.jar hello.jar
 
 				System.out.println("// DEX CLASSES");
-
-				String[] aArgs = { "--verbose", "--no-strict",
-						"--output=" + strProj + "/build/demo_android.dex",
-						strProj + "/src/org", strProj + "/libs/demolib.jar" };
-				com.android.dx.command.dexer.Main.main(aArgs);
+				com.android.dx.command.dexer.Main.main(new String[] {
+						"--verbose", "--no-strict", "--output=" + strClassDex,
+						strClass, strLibs + "demolib.jar" });
 
 				System.out.println("// MERGE DEX"); // TODO
 
 				// DEBUG
-				Util.listRecursive(new File(strProj, "build"));
+				Util.listRecursive(new File(strBuild));
 
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

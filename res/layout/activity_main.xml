@@ -5,11 +5,29 @@
     tools:context="${relativePackage}.${activityClass}" >
 
     <Button
-        android:id="@+id/btnCompile"
+        android:id="@+id/btnClean"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
+        android:onClick="clean"
+        android:text="@string/btnClean" />
+
+    <Button
+        android:id="@+id/btnAapt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btnClean"
+        android:onClick="aapt"
+        android:text="@string/btnAapt" />
+
+    <Button
+        android:id="@+id/btnCompile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btnAapt"
         android:onClick="compile"
         android:text="@string/btnCompile" />
 

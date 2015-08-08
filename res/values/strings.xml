@@ -2,7 +2,9 @@
 <resources>
 
     <string name="app_name">SelfCompileApp</string>
-    <string name="btnCompile">Compile</string>
-    <string name="btnDex">Dex</string>
+    <string name="btnClean">Clean build</string>
+    <string name="btnAapt">Pack assets</string>
+    <string name="btnCompile">Compile java</string>
+    <string name="btnDex">Dex classes</string>
 
 </resources>
