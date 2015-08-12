@@ -15,7 +15,7 @@ import android.widget.Button;
 
 public class MainActivity extends Activity {
 
-	private final String target_platform = "android-22";
+	private final String target_platform = "android-18";
 	private final String proj_name = "demo_android";
 	private final String[] proj_libs = { "demolib.jar" };
 
@@ -104,23 +104,30 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			File dirDownloads = Environment
 					.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-			File dirProject = new File(dirDownloads, proj_name);
+			String strRoot = dirDownloads.getAbsolutePath() + File.separator;
+			String strProj = strRoot + proj_name + File.separator;
 
-			System.out.println("// REMOVE R.JAVA");
-			File javaR = new File(dirProject, "/gen/R.java");
-			javaR.delete();
+			String strBuild = strProj + "build" + File.separator;
 
-			System.out.println("// RUN AAPT & CREATE R.JAVA"); // TODO
+			String strRes = strProj + "res" + File.separator;
+			String strGen = strProj + "gen" + File.separator;
 
-			// aapt p -f -v -M AndroidManifest.xml -F ./build/resources.res -I
-			// ~/system/classes/android.jar -S res/ -J gen
+			String strBoot = strRoot + target_platform + ".jar";
+			String strMan = strProj + "AndroidManifest.xml";
+
+			System.out.println("// RUN AAPT & CREATE R.JAVA");
+			Aapt aapt = new Aapt();
+			int exitCode = aapt.fnExecute("aapt p -f -v -M " + strMan + " -F "
+					+ strBuild + "resources.res -I " + strBoot + " -S "
+					+ strRes + " -J " + strGen);
+
+			System.out.println(exitCode);
 
 			// DEBUG
-			Util.listRecursive(dirProject);
+			Util.listRecursive(new File(strProj));
 
 			return null;
 		}
-
 	}
 
 	private class CompileJava extends AsyncTask<Object, Object, Object> {
@@ -200,7 +207,7 @@ public class MainActivity extends Activity {
 				System.out.println("// DEX CLASSES");
 				ArrayList<String> lstDexArgs = new ArrayList<String>();
 				lstDexArgs.add("--verbose");
-				lstDexArgs.add("--output=" + strBuild + proj_name + ".dex");
+				lstDexArgs.add("--output=" + strBuild + "classes.dex");
 				lstDexArgs.add(strClass);
 				for (String lib : proj_libs) {
 					lstDexArgs.add(strLibs + lib);
