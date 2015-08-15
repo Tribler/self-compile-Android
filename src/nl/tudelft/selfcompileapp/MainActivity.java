@@ -1,12 +1,15 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -30,6 +33,11 @@ public class MainActivity extends Activity {
 		new CleanBuild().execute();
 	}
 
+	public void aidl(View btnAidl) {
+		btnAidl.setEnabled(false);
+		new ConvertAidl().execute();
+	}
+
 	public void aapt(View btnAapt) {
 		btnAapt.setEnabled(false);
 		new PackAssets().execute();
@@ -42,7 +50,27 @@ public class MainActivity extends Activity {
 
 	public void dex(View btnDex) {
 		btnDex.setEnabled(false);
-		new DexClasses().execute();
+		new DexMerge().execute();
+	}
+
+	public void apk(View btnPack) {
+		btnPack.setEnabled(false);
+		new BuildApk().execute();
+	}
+
+	public void sign(View btnSign) {
+		btnSign.setEnabled(false);
+		new SignApk().execute();
+	}
+
+	public void align(View btnAlign) {
+		btnAlign.setEnabled(false);
+		new AlignApk().execute();
+	}
+
+	public void install(View btnInstall) {
+		btnInstall.setEnabled(false);
+		new InstallApk().execute();
 	}
 
 	private class CleanBuild extends AsyncTask<Object, Object, Object> {
@@ -83,13 +111,29 @@ public class MainActivity extends Activity {
 				// DEBUG
 				Util.listRecursive(dirProject);
 
-			} catch (IOException e) {
+			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			return null;
 		}
 
+	}
+
+	private class ConvertAidl extends AsyncTask<Object, Object, Object> {
+
+		@Override
+		protected void onPostExecute(Object result) {
+			Button btnAidl = (Button) findViewById(R.id.btnAidl);
+			btnAidl.setEnabled(true);
+		}
+
+		@Override
+		protected Object doInBackground(Object... params) {
+			// TODO
+
+			return null;
+		}
 	}
 
 	private class PackAssets extends AsyncTask<Object, Object, Object> {
@@ -104,11 +148,10 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			File dirDownloads = Environment
 					.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
 			String strRoot = dirDownloads.getAbsolutePath() + File.separator;
 			String strProj = strRoot + proj_name + File.separator;
-
 			String strBuild = strProj + "build" + File.separator;
-
 			String strRes = strProj + "res" + File.separator;
 			String strGen = strProj + "gen" + File.separator;
 
@@ -142,12 +185,12 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			File dirDownloads = Environment
 					.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
 			String strRoot = dirDownloads.getAbsolutePath() + File.separator;
 			String strProj = strRoot + proj_name + File.separator;
 			String strLibs = strProj + "libs" + File.separator;
 			String strBuild = strProj + "build" + File.separator;
 			String strClass = strBuild + "classes" + File.separator;
-
 			String strGen = strProj + "gen" + File.separator;
 			String strSrc = strProj + "src" + File.separator;
 
@@ -174,7 +217,7 @@ public class MainActivity extends Activity {
 
 	}
 
-	private class DexClasses extends AsyncTask<Object, Object, Object> {
+	private class DexMerge extends AsyncTask<Object, Object, Object> {
 
 		@Override
 		protected void onPostExecute(Object result) {
@@ -187,13 +230,13 @@ public class MainActivity extends Activity {
 			try {
 				File dirDownloads = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
 				String strRoot = dirDownloads.getAbsolutePath()
 						+ File.separator;
 				String strProj = strRoot + proj_name + File.separator;
 				String strLibs = strProj + "libs" + File.separator;
 				String strBuild = strProj + "build" + File.separator;
 				String strClass = strBuild + "classes" + File.separator;
-
 				String strLibsDex = strBuild + "dexedLibs" + File.separator;
 
 				System.out.println("// PRE DEX LIBS");
@@ -221,7 +264,166 @@ public class MainActivity extends Activity {
 				// DEBUG
 				Util.listRecursive(new File(strBuild));
 
-			} catch (IOException e) {
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+	}
+
+	private class BuildApk extends AsyncTask<Object, Object, Object> {
+
+		@Override
+		protected void onPostExecute(Object result) {
+			Button btnApk = (Button) findViewById(R.id.btnApk);
+			btnApk.setEnabled(true);
+		}
+
+		@Override
+		protected Object doInBackground(Object... params) {
+			try {
+				File dirDownloads = Environment
+						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+				String strRoot = dirDownloads.getAbsolutePath()
+						+ File.separator;
+				String strProj = strRoot + proj_name + File.separator;
+				String strBuild = strProj + "build" + File.separator;
+				String strDist = strProj + "dist" + File.separator;
+
+				File apkFile = new File(strDist + proj_name + ".unsigned.apk");
+				File resFile = new File(strBuild + "resources.res");
+				File dexFile = new File(strBuild + "classes.dex");
+
+				// Do NOT use embedded JarSigner
+				PrivateKey privateKey = null;
+				X509Certificate x509Cert = null;
+
+				System.out.println("// RUN APK BUILDER");
+				com.android.sdklib.build.ApkBuilder apkbuilder = new com.android.sdklib.build.ApkBuilder(
+						apkFile, resFile, dexFile, privateKey, x509Cert,
+						System.out);
+
+				System.out.println("// ADD NATIVE LIBS"); // TODO
+
+				apkbuilder.setDebugMode(true);
+				apkbuilder.sealApk();
+
+				// DEBUG
+				Util.listRecursive(new File(strDist));
+
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+	}
+
+	private class SignApk extends AsyncTask<Object, Object, Object> {
+
+		@Override
+		protected void onPostExecute(Object result) {
+			Button btnSign = (Button) findViewById(R.id.btnSign);
+			btnSign.setEnabled(true);
+		}
+
+		@Override
+		protected Object doInBackground(Object... params) {
+			try {
+				File dirDownloads = Environment
+						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+				String strRoot = dirDownloads.getAbsolutePath()
+						+ File.separator;
+				String strProj = strRoot + proj_name + File.separator;
+				String strDist = strProj + "dist" + File.separator;
+
+				System.out.println("// RUN ZIP SIGNER");
+				kellinwood.security.zipsigner.ZipSigner zipsigner = new kellinwood.security.zipsigner.ZipSigner();
+
+				zipsigner.setKeymode("testkey"); // TODO
+
+				zipsigner.signZip(strDist + proj_name + ".unsigned.apk",
+						strDist + proj_name + ".unaligned.apk");
+
+				// DEBUG
+				Util.listRecursive(new File(strDist));
+
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+	}
+
+	private class AlignApk extends AsyncTask<Object, Object, Object> {
+
+		@Override
+		protected void onPostExecute(Object result) {
+			Button btnAlign = (Button) findViewById(R.id.btnAlign);
+			btnAlign.setEnabled(true);
+		}
+
+		@Override
+		protected Object doInBackground(Object... params) {
+			try {
+				File dirDownloads = Environment
+						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+				String strRoot = dirDownloads.getAbsolutePath()
+						+ File.separator;
+				String strProj = strRoot + proj_name + File.separator;
+				String strDist = strProj + "dist" + File.separator;
+
+				System.out.println("// RUN ZIP ALIGN"); // TODO
+
+				// DEBUG
+				Util.listRecursive(new File(strDist));
+
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+	}
+
+	private class InstallApk extends AsyncTask<Object, Object, Object> {
+
+		@Override
+		protected void onPostExecute(Object result) {
+			Button btnInstall = (Button) findViewById(R.id.btnInstall);
+			btnInstall.setEnabled(true);
+		}
+
+		@Override
+		protected Object doInBackground(Object... params) {
+			try {
+				File dirDownloads = Environment
+						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+				String strRoot = dirDownloads.getAbsolutePath()
+						+ File.separator;
+				String strProj = strRoot + proj_name + File.separator;
+				String strDist = strProj + "dist" + File.separator;
+
+				File apkFile = new File(strDist + proj_name + ".unaligned.apk");
+
+				System.out.println("// INSTALL APK");
+				Intent intent = new Intent(Intent.ACTION_VIEW);
+				intent.setDataAndType(Uri.fromFile(apkFile),
+						"application/vnd.android.package-archive");
+				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+				startActivity(intent);
+
+			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

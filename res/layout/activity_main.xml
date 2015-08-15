@@ -14,11 +14,20 @@
         android:text="@string/btnClean" />
 
     <Button
-        android:id="@+id/btnAapt"
+        android:id="@+id/btnAidl"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_below="@+id/btnClean"
+        android:onClick="aidl"
+        android:text="@string/btnAidl" />
+
+    <Button
+        android:id="@+id/btnAapt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btnAidl"
         android:onClick="aapt"
         android:text="@string/btnAapt" />
 
@@ -39,5 +48,41 @@
         android:layout_below="@+id/btnCompile"
         android:onClick="dex"
         android:text="@string/btnDex" />
+
+    <Button
+        android:id="@+id/btnApk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btnDex"
+        android:onClick="apk"
+        android:text="@string/btnApk" />
+
+    <Button
+        android:id="@+id/btnSign"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btnApk"
+        android:onClick="sign"
+        android:text="@string/btnSign" />
+
+    <Button
+        android:id="@+id/btnAlign"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btnSign"
+        android:onClick="align"
+        android:text="@string/btnAlign" />
+
+    <Button
+        android:id="@+id/btnInstall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btnAlign"
+        android:onClick="install"
+        android:text="@string/btnInstall" />
 
 </RelativeLayout>

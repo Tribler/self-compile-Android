@@ -3,8 +3,13 @@
 
     <string name="app_name">SelfCompileApp</string>
     <string name="btnClean">Clean build</string>
+    <string name="btnAidl">Convert aidl</string>
     <string name="btnAapt">Pack assets</string>
     <string name="btnCompile">Compile java</string>
     <string name="btnDex">Dex classes</string>
+    <string name="btnApk">Build apk</string>
+    <string name="btnSign">Sign apk</string>
+    <string name="btnAlign">Align apk</string>
+    <string name="btnInstall">Install apk</string>
 
 </resources>
