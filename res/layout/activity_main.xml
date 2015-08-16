@@ -41,11 +41,20 @@
         android:text="@string/btnCompile" />
 
     <Button
-        android:id="@+id/btnDex"
+        android:id="@+id/btnDexLibs"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_below="@+id/btnCompile"
+        android:onClick="dexlibs"
+        android:text="@string/btnDexLibs" />
+
+    <Button
+        android:id="@+id/btnDex"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btnDexLibs"
         android:onClick="dex"
         android:text="@string/btnDex" />
 

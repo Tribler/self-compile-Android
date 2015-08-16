@@ -55,6 +55,11 @@ public class MainActivity extends Activity {
 		new CompileJava().execute();
 	}
 
+	public void dexlibs(View btnDexLibs) {
+		btnDexLibs.setEnabled(false);
+		new DexLibs().execute();
+	}
+
 	public void dex(View btnDex) {
 		btnDex.setEnabled(false);
 		new DexMerge().execute();
@@ -278,6 +283,48 @@ public class MainActivity extends Activity {
 
 	}
 
+	private class DexLibs extends AsyncTask<Object, Object, Object> {
+
+		@Override
+		protected void onPostExecute(Object result) {
+			Button btnDexLibs = (Button) findViewById(R.id.btnDexLibs);
+			btnDexLibs.setEnabled(true);
+		}
+
+		@Override
+		protected Object doInBackground(Object... params) {
+			try {
+				File dirRoot = Environment
+						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+				File dirProj = new File(dirRoot, proj_name);
+				File dirLibs = new File(dirProj, "libs");
+				File dirBin = new File(dirProj, "bin");
+				File dirDexedLibs = new File(dirBin, "dexedLibs");
+
+				System.out.println("// PRE-DEX LIBS");
+				for (String lib : proj_libs) {
+					File jarLib = new File(dirLibs, lib);
+					File dexLib = new File(dirDexedLibs, lib + ".dex");
+
+					if (!dexLib.exists()) {
+						com.android.dx.command.dexer.Main.main(new String[] {
+								"--verbose", "--output=" + dexLib.getPath(),
+								jarLib.getPath() });
+					}
+				}
+
+				// DEBUG
+				Util.listRecursive(dirBin);
+
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+	}
+
 	private class DexMerge extends AsyncTask<Object, Object, Object> {
 
 		@Override
@@ -292,7 +339,6 @@ public class MainActivity extends Activity {
 				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 				File dirProj = new File(dirRoot, proj_name);
-				File dirLibs = new File(dirProj, "libs");
 				File dirBin = new File(dirProj, "bin");
 				File dirClasses = new File(dirBin, "classes");
 				File dirDexedLibs = new File(dirBin, "dexedLibs");
@@ -303,20 +349,11 @@ public class MainActivity extends Activity {
 						"--verbose", "--output=" + dexClasses.getPath(),
 						dirClasses.getPath() });
 
-				System.out.println("// DEX & MERGE LIBS");
+				System.out.println("// MERGE DEXED LIBS");
 				for (String lib : proj_libs) {
-					File jarLib = new File(dirLibs, lib);
 					File dexLib = new File(dirDexedLibs, lib + ".dex");
-
-					if (!dexLib.exists()) {
-						com.android.dx.command.dexer.Main.main(new String[] {
-								"--verbose", "--output=" + dexLib.getPath(),
-								jarLib.getPath() });
-					}
-
 					Dex merged = new DexMerger(new Dex(dexClasses), new Dex(
 							dexLib), CollisionPolicy.FAIL).merge();
-					// File dexTemp = new File(dirProj, "temp.dex"); // DEBUG
 					merged.writeTo(dexClasses);
 				}
 
