@@ -182,25 +182,49 @@ public class MainActivity extends Activity {
 			File dirGen = new File(dirProj, "gen");
 			File dirRes = new File(dirProj, "res");
 			File dirBin = new File(dirProj, "bin");
+			// File dirBinRes = new File(dirBin, "res");
+			// File dirCrunch = new File(dirBinRes, "crunch");
+			// File xmlBinMan = new File(dirBin, "AndroidManifest.xml");
 			File xmlMan = new File(dirProj, "AndroidManifest.xml");
 			File jarAndroid = new File(dirRoot, target_platform + ".jar");
-			File resResources = new File(dirBin, "resources.res");
+			File ap_Resources = new File(dirBin, "resources.ap_");
 
 			System.out.println("// DELETE xxhdpi FOLDER"); // TODO update aapt
 			Util.deleteRecursive(new File(dirRes, "drawable-xxhdpi"));
 
-			System.out.println("// CRUNCH PNG"); // TODO
-			// aapt c[runch] [-v] -S resource-sources ... -C output-folder ...
-			// Do PNG preprocessing and store the results in output folder.
+			Aapt aapt = new Aapt();
+			int exitCode;
 
 			System.out.println("// RUN AAPT & CREATE R.JAVA");
-			Aapt aapt = new Aapt();
-			int exitCode = aapt.fnExecute("aapt p -f -v -M " + xmlMan.getPath()
-					+ " -F " + resResources.getPath() + " -I "
+			exitCode = aapt.fnExecute("aapt p -f -v -M " + xmlMan.getPath()
+					+ " -F " + ap_Resources.getPath() + " -I "
 					+ jarAndroid.getPath() + " -A " + dirAssets.getPath()
 					+ " -S " + dirRes.getPath() + " -J " + dirGen.getPath());
-
 			System.out.println(exitCode);
+
+			// System.out.println("// CREATE R.JAVA");
+			// exitCode = aapt.fnExecute("aapt p -m -v -J " + dirGen.getPath()
+			// + " -M " + xmlMan.getPath() + " -S " + dirRes.getPath()
+			// + " -I ");
+			// System.out.println(exitCode);
+			//
+			// System.out.println("// CRUNCH PNG");
+			// exitCode = aapt.fnExecute("aapt c -v -S " + dirRes.getPath()
+			// + " -C " + dirCrunch.getPath());
+			// System.out.println(exitCode);
+			//
+			// System.out.println("// RUN AAPT");
+			// exitCode = aapt
+			// .fnExecute("aapt p -v -S "
+			// + dirCrunch.getPath()
+			// + " -S "
+			// + dirRes.getPath()
+			// + " -f --no-crunch --auto-add-overlay --debug-mode -0 apk -M "
+			// + xmlBinMan.getPath() + " -A "
+			// + dirAssets.getPath() + " -I "
+			// + jarAndroid.getPath() + " -F "
+			// + ap_Resources.getPath());
+			// System.out.println(exitCode);
 
 			// DEBUG
 			Util.listRecursive(dirProj);
@@ -328,7 +352,7 @@ public class MainActivity extends Activity {
 				File dirDist = new File(dirProj, "dist");
 				File apkUnsigned = new File(dirDist, proj_name
 						+ ".unsigned.apk");
-				File resResources = new File(dirBin, "resources.res");
+				File ap_Resources = new File(dirBin, "resources.ap_");
 				File dexClasses = new File(dirBin, "classes.dex");
 
 				// Do NOT use embedded JarSigner
@@ -337,7 +361,7 @@ public class MainActivity extends Activity {
 
 				System.out.println("// RUN APK BUILDER");
 				ApkBuilder apkbuilder = new ApkBuilder(apkUnsigned,
-						resResources, dexClasses, privateKey, x509Cert,
+						ap_Resources, dexClasses, privateKey, x509Cert,
 						System.out);
 
 				System.out.println("// ADD SOURCE FOLDER");
