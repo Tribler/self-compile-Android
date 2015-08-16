@@ -1,7 +1,7 @@
 Dependencies:
 
 dx-22.0.1.jar
-ecj-4.5.jar
+ecj-4.3.2.jar
 sdklib-24.3.3.jar
 zipsigner-lib-1.17.jar
 	zipio-lib-1.8.jar

@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
 	private final String proj_name = "SelfCompileApp";
 	private final String[] proj_libs = { "kellinwood-logging-lib-1.1.jar",
 			"zipio-lib-1.8.jar", "zipsigner-lib-1.17.jar", "sdklib-24.3.3.jar",
-			"dx-22.0.1.jar", "ecj-4.5.jar" };
+			"dx-22.0.1.jar", "ecj-4.3.2.jar" };
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
