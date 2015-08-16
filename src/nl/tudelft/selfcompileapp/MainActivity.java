@@ -1,6 +1,8 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -19,8 +21,10 @@ import android.widget.Button;
 public class MainActivity extends Activity {
 
 	private final String target_platform = "android-18";
-	private final String proj_name = "demo_android";
-	private final String[] proj_libs = { "demolib.jar" };
+	private final String proj_name = "SelfCompileApp";
+	private final String[] proj_libs = { "dx-22.0.1.jar", "ecj-4.5.jar",
+			"sdklib-24.3.3.jar", "zipsigner-lib-1.17.jar", "zipio-lib-1.8.jar",
+			"kellinwood-logging-lib-1.1.jar" };
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -84,32 +88,47 @@ public class MainActivity extends Activity {
 		@Override
 		protected Object doInBackground(Object... params) {
 			try {
-				File dirDownloads = Environment
+				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProject = new File(dirDownloads, proj_name);
+				File dirProj = new File(dirRoot, proj_name);
+				File dirGen = new File(dirProj, "gen");
+				File dirBuild = new File(dirProj, "build");
+				File dirClasses = new File(dirBuild, "classes");
+				File dirDexedLibs = new File(dirBuild, "dexedLibs");
+				File dirDist = new File(dirProj, "dist");
 
-				System.out.println("// COPY ANDROID PLATFORM");
-				File jarAndroid = new File(dirDownloads, target_platform
-						+ ".jar");
+				System.out.println("// EXTRACT ANDROID PLATFORM");
+				File jarAndroid = new File(dirRoot, target_platform + ".jar");
 				if (!jarAndroid.exists()) {
 
 					InputStream zipAndroidPlatform = getAssets().open(
-							target_platform + ".zip");
-					Util.unZip(zipAndroidPlatform, dirDownloads);
+							target_platform + ".jar.zip");
+					Util.unZip(zipAndroidPlatform, dirRoot);
 				}
 
 				System.out.println("// DELETE PROJECT FOLDER");
-				Util.deleteRecursive(dirProject);
+				Util.deleteRecursive(dirProj);
 
 				// DEBUG
-				Util.listRecursive(dirDownloads);
+				Util.listRecursive(dirRoot);
 
 				System.out.println("// EXTRACT PROJECT");
 				InputStream zipProjSrc = getAssets().open(proj_name + ".zip");
-				Util.unZip(zipProjSrc, dirDownloads);
+				File zipCopy = new File(dirRoot, proj_name + ".zip");
+				if (zipCopy.exists()) {
+					zipCopy.delete();
+				}
+				Util.copyFile(zipProjSrc, new FileOutputStream(zipCopy));
+				Util.unZip(new FileInputStream(zipCopy), dirProj);
+
+				System.out.println("// CREATE BUILD FOLDERS");
+				dirGen.mkdirs();
+				dirClasses.mkdirs();
+				dirDexedLibs.mkdirs();
+				dirDist.mkdirs();
 
 				// DEBUG
-				Util.listRecursive(dirProject);
+				Util.listRecursive(dirProj);
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -146,28 +165,29 @@ public class MainActivity extends Activity {
 
 		@Override
 		protected Object doInBackground(Object... params) {
-			File dirDownloads = Environment
+			File dirRoot = Environment
 					.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+			File dirProj = new File(dirRoot, proj_name);
+			File dirGen = new File(dirProj, "gen");
+			File dirRes = new File(dirProj, "res");
+			File dirBuild = new File(dirProj, "build");
+			File xmlMan = new File(dirProj, "AndroidManifest.xml");
+			File jarAndroid = new File(dirRoot, target_platform + ".jar");
 
-			String strRoot = dirDownloads.getAbsolutePath() + File.separator;
-			String strProj = strRoot + proj_name + File.separator;
-			String strBuild = strProj + "build" + File.separator;
-			String strRes = strProj + "res" + File.separator;
-			String strGen = strProj + "gen" + File.separator;
-
-			String strBoot = strRoot + target_platform + ".jar";
-			String strMan = strProj + "AndroidManifest.xml";
+			System.out.println("// DELETE xxhdpi FOLDER"); // TODO update aapt
+			Util.deleteRecursive(new File(dirRes, "drawable-xxhdpi"));
 
 			System.out.println("// RUN AAPT & CREATE R.JAVA");
 			Aapt aapt = new Aapt();
-			int exitCode = aapt.fnExecute("aapt p -f -v -M " + strMan + " -F "
-					+ strBuild + "resources.res -I " + strBoot + " -S "
-					+ strRes + " -J " + strGen);
+			int exitCode = aapt.fnExecute("aapt p -f -v -M " + xmlMan.getPath()
+					+ " -F " + dirBuild.getPath() + "resources.res -I "
+					+ jarAndroid.getPath() + " -S " + dirRes.getPath() + " -J "
+					+ dirGen.getPath());
 
 			System.out.println(exitCode);
 
 			// DEBUG
-			Util.listRecursive(new File(strProj));
+			Util.listRecursive(dirProj);
 
 			return null;
 		}
@@ -183,34 +203,35 @@ public class MainActivity extends Activity {
 
 		@Override
 		protected Object doInBackground(Object... params) {
-			File dirDownloads = Environment
+			File dirRoot = Environment
 					.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+			File dirProj = new File(dirRoot, proj_name);
+			File dirSrc = new File(dirProj, "src");
+			File dirGen = new File(dirProj, "gen");
+			File dirLibs = new File(dirProj, "libs");
+			File dirBuild = new File(dirProj, "build");
+			File dirClasses = new File(dirBuild, "classes");
+			File jarAndroid = new File(dirRoot, target_platform + ".jar");
 
-			String strRoot = dirDownloads.getAbsolutePath() + File.separator;
-			String strProj = strRoot + proj_name + File.separator;
-			String strLibs = strProj + "libs" + File.separator;
-			String strBuild = strProj + "build" + File.separator;
-			String strClass = strBuild + "classes" + File.separator;
-			String strGen = strProj + "gen" + File.separator;
-			String strSrc = strProj + "src" + File.separator;
-
-			String strBoot = strRoot + target_platform + ".jar";
-			String strClassPath = strSrc + File.pathSeparator + strGen;
+			String strBootCP = jarAndroid.getPath();
+			String strClassPath = dirSrc.getPath() + File.pathSeparator
+					+ dirGen.getPath();
 			for (String lib : proj_libs) {
-				strClassPath += File.pathSeparator + strLibs + lib;
+				strClassPath += File.pathSeparator
+						+ new File(dirLibs, lib).getPath();
 			}
 
 			System.out.println("// COMPILE SOURCE RECURSIVE");
 			org.eclipse.jdt.core.compiler.batch.BatchCompiler.compile(
 					"-1.5 -showversion -verbose -deprecation -bootclasspath "
-							+ strBoot + " -cp " + strClassPath + " -d "
-							+ strClass + " " + strGen + " " + strSrc,
-					new PrintWriter(System.out), new PrintWriter(System.err),
-					null);
+							+ strBootCP + " -cp " + strClassPath + " -d "
+							+ dirClasses.getPath() + " " + dirGen.getPath()
+							+ " " + dirSrc.getPath(), new PrintWriter(
+							System.out), new PrintWriter(System.err), null);
 
 			// DEBUG
-			Util.listRecursive(new File(strGen));
-			Util.listRecursive(new File(strBuild));
+			Util.listRecursive(dirGen);
+			Util.listRecursive(dirBuild);
 
 			return null;
 		}
@@ -228,32 +249,32 @@ public class MainActivity extends Activity {
 		@Override
 		protected Object doInBackground(Object... params) {
 			try {
-				File dirDownloads = Environment
+				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
-				String strRoot = dirDownloads.getAbsolutePath()
-						+ File.separator;
-				String strProj = strRoot + proj_name + File.separator;
-				String strLibs = strProj + "libs" + File.separator;
-				String strBuild = strProj + "build" + File.separator;
-				String strClass = strBuild + "classes" + File.separator;
-				String strLibsDex = strBuild + "dexedLibs" + File.separator;
+				File dirProj = new File(dirRoot, proj_name);
+				File dirLibs = new File(dirProj, "libs");
+				File dirBuild = new File(dirProj, "build");
+				File dirClasses = new File(dirBuild, "classes");
+				File dirDexedLibs = new File(dirBuild, "dexedLibs");
+				File dexClasses = new File(dirBuild, "classes.dex");
 
 				System.out.println("// PRE DEX LIBS");
 				for (String lib : proj_libs) {
 					com.android.dx.command.dexer.Main.main(new String[] {
 							"--verbose",
-							"--output=" + strLibsDex + lib + ".dex",
-							strLibs + lib });
+							"--output="
+									+ new File(dirDexedLibs, lib + ".dex")
+											.getPath(),
+							new File(dirLibs, lib).getPath() });
 				}
 
 				System.out.println("// DEX CLASSES");
 				ArrayList<String> lstDexArgs = new ArrayList<String>();
 				lstDexArgs.add("--verbose");
-				lstDexArgs.add("--output=" + strBuild + "classes.dex");
-				lstDexArgs.add(strClass);
+				lstDexArgs.add("--output=" + dexClasses.getPath());
+				lstDexArgs.add(dirClasses.getPath());
 				for (String lib : proj_libs) {
-					lstDexArgs.add(strLibs + lib);
+					lstDexArgs.add(new File(dirLibs, lib).getPath());
 				}
 				String[] arrDexArgs = new String[lstDexArgs.size()];
 				lstDexArgs.toArray(arrDexArgs);
@@ -262,7 +283,7 @@ public class MainActivity extends Activity {
 				System.out.println("// MERGE DEX"); // TODO
 
 				// DEBUG
-				Util.listRecursive(new File(strBuild));
+				Util.listRecursive(dirBuild);
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -284,18 +305,19 @@ public class MainActivity extends Activity {
 		@Override
 		protected Object doInBackground(Object... params) {
 			try {
-				File dirDownloads = Environment
+				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
-				String strRoot = dirDownloads.getAbsolutePath()
-						+ File.separator;
-				String strProj = strRoot + proj_name + File.separator;
-				String strBuild = strProj + "build" + File.separator;
-				String strDist = strProj + "dist" + File.separator;
-
-				File apkFile = new File(strDist + proj_name + ".unsigned.apk");
-				File resFile = new File(strBuild + "resources.res");
-				File dexFile = new File(strBuild + "classes.dex");
+				File dirProj = new File(dirRoot, proj_name);
+				File dirSrc = new File(dirProj, "src");
+				File dirLibs = new File(dirProj, "libs");
+				File dirBuild = new File(dirProj, "build");
+				File dirDist = new File(dirProj, "dist");
+				File apkUnsigned = new File(dirDist, proj_name
+						+ ".unsigned.apk");
+				File resResources = new File(dirBuild, "resources.res");
+				File dexClasses = new File(dirBuild, "classes.dex");
+				File jarAndroid = new File(dirRoot, target_platform + ".jar");
+				File zipProject = new File(dirRoot, proj_name + ".zip");
 
 				// Do NOT use embedded JarSigner
 				PrivateKey privateKey = null;
@@ -303,16 +325,24 @@ public class MainActivity extends Activity {
 
 				System.out.println("// RUN APK BUILDER");
 				com.android.sdklib.build.ApkBuilder apkbuilder = new com.android.sdklib.build.ApkBuilder(
-						apkFile, resFile, dexFile, privateKey, x509Cert,
-						System.out);
+						apkUnsigned, resResources, dexClasses, privateKey,
+						x509Cert, System.out);
 
-				System.out.println("// ADD NATIVE LIBS"); // TODO
+				System.out.println("// ADD SOURCE FOLDER");
+				apkbuilder.addSourceFolder(dirSrc);
+
+				System.out.println("// ADD ASSETS");
+				apkbuilder.addFile(jarAndroid, "assets");
+				apkbuilder.addFile(zipProject, "assets");
+
+				System.out.println("// ADD NATIVE LIBS");
+				apkbuilder.addNativeLibraries(dirLibs);
 
 				apkbuilder.setDebugMode(true);
 				apkbuilder.sealApk();
 
 				// DEBUG
-				Util.listRecursive(new File(strDist));
+				Util.listRecursive(dirDist);
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -320,7 +350,6 @@ public class MainActivity extends Activity {
 			}
 			return null;
 		}
-
 	}
 
 	private class SignApk extends AsyncTask<Object, Object, Object> {
@@ -334,24 +363,23 @@ public class MainActivity extends Activity {
 		@Override
 		protected Object doInBackground(Object... params) {
 			try {
-				File dirDownloads = Environment
+				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
-				String strRoot = dirDownloads.getAbsolutePath()
-						+ File.separator;
-				String strProj = strRoot + proj_name + File.separator;
-				String strDist = strProj + "dist" + File.separator;
+				File dirProj = new File(dirRoot, proj_name);
+				File dirDist = new File(dirProj, "dist");
+				File apkUnsigned = new File(dirDist, proj_name
+						+ ".unsigned.apk");
+				File apkSigned = new File(dirDist, proj_name + ".unaligned.apk");
 
 				System.out.println("// RUN ZIP SIGNER");
 				kellinwood.security.zipsigner.ZipSigner zipsigner = new kellinwood.security.zipsigner.ZipSigner();
 
 				zipsigner.setKeymode("testkey"); // TODO
 
-				zipsigner.signZip(strDist + proj_name + ".unsigned.apk",
-						strDist + proj_name + ".unaligned.apk");
+				zipsigner.signZip(apkUnsigned.getPath(), apkSigned.getPath());
 
 				// DEBUG
-				Util.listRecursive(new File(strDist));
+				Util.listRecursive(dirDist);
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -373,18 +401,15 @@ public class MainActivity extends Activity {
 		@Override
 		protected Object doInBackground(Object... params) {
 			try {
-				File dirDownloads = Environment
+				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
-				String strRoot = dirDownloads.getAbsolutePath()
-						+ File.separator;
-				String strProj = strRoot + proj_name + File.separator;
-				String strDist = strProj + "dist" + File.separator;
+				File dirProj = new File(dirRoot, proj_name);
+				File dirDist = new File(dirProj, "dist");
 
 				System.out.println("// RUN ZIP ALIGN"); // TODO
 
 				// DEBUG
-				Util.listRecursive(new File(strDist));
+				Util.listRecursive(dirDist);
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -406,19 +431,15 @@ public class MainActivity extends Activity {
 		@Override
 		protected Object doInBackground(Object... params) {
 			try {
-				File dirDownloads = Environment
+				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
-				String strRoot = dirDownloads.getAbsolutePath()
-						+ File.separator;
-				String strProj = strRoot + proj_name + File.separator;
-				String strDist = strProj + "dist" + File.separator;
-
-				File apkFile = new File(strDist + proj_name + ".unaligned.apk");
+				File dirProj = new File(dirRoot, proj_name);
+				File dirDist = new File(dirProj, "dist");
+				File apkSigned = new File(dirDist, proj_name + ".unaligned.apk");
 
 				System.out.println("// INSTALL APK");
 				Intent intent = new Intent(Intent.ACTION_VIEW);
-				intent.setDataAndType(Uri.fromFile(apkFile),
+				intent.setDataAndType(Uri.fromFile(apkSigned),
 						"application/vnd.android.package-archive");
 				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 				startActivity(intent);
