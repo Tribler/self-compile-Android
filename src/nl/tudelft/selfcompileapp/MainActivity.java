@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
 	private final String proj_name = "SelfCompileApp";
 	private final String[] proj_libs = { "kellinwood-logging-lib-1.1.jar",
 			"zipio-lib-1.8.jar", "zipsigner-lib-1.17.jar", "sdklib-24.3.3.jar",
-			"dx-22.0.1.jar", "ecj-4.3.2.jar" };
+			"dx-22.0.1.jar", "ecj-4.5-A.jar", "ecj-4.5-B.jar", "ecj-4.5-C.jar" };
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -304,7 +304,7 @@ public class MainActivity extends Activity {
 				System.out.println("// PRE-DEX LIBS");
 				for (String lib : proj_libs) {
 					File jarLib = new File(dirLibs, lib);
-					File dexLib = new File(dirDexedLibs, lib + ".dex");
+					File dexLib = new File(dirDexedLibs, lib);
 
 					if (!dexLib.exists()) {
 						com.android.dx.command.dexer.Main.main(new String[] {
@@ -351,7 +351,7 @@ public class MainActivity extends Activity {
 
 				System.out.println("// MERGE DEXED LIBS");
 				for (String lib : proj_libs) {
-					File dexLib = new File(dirDexedLibs, lib + ".dex");
+					File dexLib = new File(dirDexedLibs, lib);
 					Dex merged = new DexMerger(new Dex(dexClasses), new Dex(
 							dexLib), CollisionPolicy.FAIL).merge();
 					merged.writeTo(dexClasses);
