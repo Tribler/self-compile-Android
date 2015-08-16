@@ -1,13 +1,16 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+
+import com.android.dex.Dex;
+import com.android.dx.merge.CollisionPolicy;
+import com.android.dx.merge.DexMerger;
+import com.android.sdklib.build.ApkBuilder;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -22,9 +25,9 @@ public class MainActivity extends Activity {
 
 	private final String target_platform = "android-18";
 	private final String proj_name = "SelfCompileApp";
-	private final String[] proj_libs = { "dx-22.0.1.jar", "ecj-4.5.jar",
-			"sdklib-24.3.3.jar", "zipsigner-lib-1.17.jar", "zipio-lib-1.8.jar",
-			"kellinwood-logging-lib-1.1.jar" };
+	private final String[] proj_libs = { "kellinwood-logging-lib-1.1.jar",
+			"zipio-lib-1.8.jar", "zipsigner-lib-1.17.jar", "sdklib-24.3.3.jar",
+			"dx-22.0.1.jar", "ecj-4.5.jar" };
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -91,10 +94,11 @@ public class MainActivity extends Activity {
 				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 				File dirProj = new File(dirRoot, proj_name);
+				File dirAssets = new File(dirProj, "assets");
 				File dirGen = new File(dirProj, "gen");
-				File dirBuild = new File(dirProj, "build");
-				File dirClasses = new File(dirBuild, "classes");
-				File dirDexedLibs = new File(dirBuild, "dexedLibs");
+				File dirBin = new File(dirProj, "bin");
+				File dirClasses = new File(dirBin, "classes");
+				File dirDexedLibs = new File(dirBin, "dexedLibs");
 				File dirDist = new File(dirProj, "dist");
 
 				System.out.println("// EXTRACT ANDROID PLATFORM");
@@ -114,18 +118,24 @@ public class MainActivity extends Activity {
 
 				System.out.println("// EXTRACT PROJECT");
 				InputStream zipProjSrc = getAssets().open(proj_name + ".zip");
-				File zipCopy = new File(dirRoot, proj_name + ".zip");
-				if (zipCopy.exists()) {
-					zipCopy.delete();
-				}
-				Util.copyFile(zipProjSrc, new FileOutputStream(zipCopy));
-				Util.unZip(new FileInputStream(zipCopy), dirProj);
+				Util.unZip(zipProjSrc, dirProj);
 
 				System.out.println("// CREATE BUILD FOLDERS");
+				dirAssets.mkdirs();
 				dirGen.mkdirs();
 				dirClasses.mkdirs();
 				dirDexedLibs.mkdirs();
 				dirDist.mkdirs();
+
+				System.out.println("// COPY ASSETS");
+				zipProjSrc = getAssets().open(proj_name + ".zip");
+				File zipCopy = new File(dirAssets, proj_name + ".zip");
+				Util.copyFile(zipProjSrc, new FileOutputStream(zipCopy));
+
+				InputStream zipAndroidPlatform = getAssets().open(
+						target_platform + ".jar.zip");
+				zipCopy = new File(dirAssets, target_platform + ".jar.zip");
+				Util.copyFile(zipAndroidPlatform, new FileOutputStream(zipCopy));
 
 				// DEBUG
 				Util.listRecursive(dirProj);
@@ -149,7 +159,7 @@ public class MainActivity extends Activity {
 
 		@Override
 		protected Object doInBackground(Object... params) {
-			// TODO
+			System.out.println("// RUN AIDL"); // TODO
 
 			return null;
 		}
@@ -168,21 +178,27 @@ public class MainActivity extends Activity {
 			File dirRoot = Environment
 					.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 			File dirProj = new File(dirRoot, proj_name);
+			File dirAssets = new File(dirProj, "assets");
 			File dirGen = new File(dirProj, "gen");
 			File dirRes = new File(dirProj, "res");
-			File dirBuild = new File(dirProj, "build");
+			File dirBin = new File(dirProj, "bin");
 			File xmlMan = new File(dirProj, "AndroidManifest.xml");
 			File jarAndroid = new File(dirRoot, target_platform + ".jar");
+			File resResources = new File(dirBin, "resources.res");
 
 			System.out.println("// DELETE xxhdpi FOLDER"); // TODO update aapt
 			Util.deleteRecursive(new File(dirRes, "drawable-xxhdpi"));
 
+			System.out.println("// CRUNCH PNG"); // TODO
+			// aapt c[runch] [-v] -S resource-sources ... -C output-folder ...
+			// Do PNG preprocessing and store the results in output folder.
+
 			System.out.println("// RUN AAPT & CREATE R.JAVA");
 			Aapt aapt = new Aapt();
 			int exitCode = aapt.fnExecute("aapt p -f -v -M " + xmlMan.getPath()
-					+ " -F " + dirBuild.getPath() + "resources.res -I "
-					+ jarAndroid.getPath() + " -S " + dirRes.getPath() + " -J "
-					+ dirGen.getPath());
+					+ " -F " + resResources.getPath() + " -I "
+					+ jarAndroid.getPath() + " -A " + dirAssets.getPath()
+					+ " -S " + dirRes.getPath() + " -J " + dirGen.getPath());
 
 			System.out.println(exitCode);
 
@@ -209,8 +225,8 @@ public class MainActivity extends Activity {
 			File dirSrc = new File(dirProj, "src");
 			File dirGen = new File(dirProj, "gen");
 			File dirLibs = new File(dirProj, "libs");
-			File dirBuild = new File(dirProj, "build");
-			File dirClasses = new File(dirBuild, "classes");
+			File dirBin = new File(dirProj, "bin");
+			File dirClasses = new File(dirBin, "classes");
 			File jarAndroid = new File(dirRoot, target_platform + ".jar");
 
 			String strBootCP = jarAndroid.getPath();
@@ -231,7 +247,7 @@ public class MainActivity extends Activity {
 
 			// DEBUG
 			Util.listRecursive(dirGen);
-			Util.listRecursive(dirBuild);
+			Util.listRecursive(dirBin);
 
 			return null;
 		}
@@ -253,37 +269,35 @@ public class MainActivity extends Activity {
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 				File dirProj = new File(dirRoot, proj_name);
 				File dirLibs = new File(dirProj, "libs");
-				File dirBuild = new File(dirProj, "build");
-				File dirClasses = new File(dirBuild, "classes");
-				File dirDexedLibs = new File(dirBuild, "dexedLibs");
-				File dexClasses = new File(dirBuild, "classes.dex");
-
-				System.out.println("// PRE DEX LIBS");
-				for (String lib : proj_libs) {
-					com.android.dx.command.dexer.Main.main(new String[] {
-							"--verbose",
-							"--output="
-									+ new File(dirDexedLibs, lib + ".dex")
-											.getPath(),
-							new File(dirLibs, lib).getPath() });
-				}
+				File dirBin = new File(dirProj, "bin");
+				File dirClasses = new File(dirBin, "classes");
+				File dirDexedLibs = new File(dirBin, "dexedLibs");
+				File dexClasses = new File(dirBin, "classes.dex");
 
 				System.out.println("// DEX CLASSES");
-				ArrayList<String> lstDexArgs = new ArrayList<String>();
-				lstDexArgs.add("--verbose");
-				lstDexArgs.add("--output=" + dexClasses.getPath());
-				lstDexArgs.add(dirClasses.getPath());
-				for (String lib : proj_libs) {
-					lstDexArgs.add(new File(dirLibs, lib).getPath());
-				}
-				String[] arrDexArgs = new String[lstDexArgs.size()];
-				lstDexArgs.toArray(arrDexArgs);
-				com.android.dx.command.dexer.Main.main(arrDexArgs);
+				com.android.dx.command.dexer.Main.main(new String[] {
+						"--verbose", "--output=" + dexClasses.getPath(),
+						dirClasses.getPath() });
 
-				System.out.println("// MERGE DEX"); // TODO
+				System.out.println("// DEX & MERGE LIBS");
+				for (String lib : proj_libs) {
+					File jarLib = new File(dirLibs, lib);
+					File dexLib = new File(dirDexedLibs, lib + ".dex");
+
+					if (!dexLib.exists()) {
+						com.android.dx.command.dexer.Main.main(new String[] {
+								"--verbose", "--output=" + dexLib.getPath(),
+								jarLib.getPath() });
+					}
+
+					Dex merged = new DexMerger(new Dex(dexClasses), new Dex(
+							dexLib), CollisionPolicy.FAIL).merge();
+					// File dexTemp = new File(dirProj, "temp.dex"); // DEBUG
+					merged.writeTo(dexClasses);
+				}
 
 				// DEBUG
-				Util.listRecursive(dirBuild);
+				Util.listRecursive(dirBin);
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -310,30 +324,24 @@ public class MainActivity extends Activity {
 				File dirProj = new File(dirRoot, proj_name);
 				File dirSrc = new File(dirProj, "src");
 				File dirLibs = new File(dirProj, "libs");
-				File dirBuild = new File(dirProj, "build");
+				File dirBin = new File(dirProj, "bin");
 				File dirDist = new File(dirProj, "dist");
 				File apkUnsigned = new File(dirDist, proj_name
 						+ ".unsigned.apk");
-				File resResources = new File(dirBuild, "resources.res");
-				File dexClasses = new File(dirBuild, "classes.dex");
-				File jarAndroid = new File(dirRoot, target_platform + ".jar");
-				File zipProject = new File(dirRoot, proj_name + ".zip");
+				File resResources = new File(dirBin, "resources.res");
+				File dexClasses = new File(dirBin, "classes.dex");
 
 				// Do NOT use embedded JarSigner
 				PrivateKey privateKey = null;
 				X509Certificate x509Cert = null;
 
 				System.out.println("// RUN APK BUILDER");
-				com.android.sdklib.build.ApkBuilder apkbuilder = new com.android.sdklib.build.ApkBuilder(
-						apkUnsigned, resResources, dexClasses, privateKey,
-						x509Cert, System.out);
+				ApkBuilder apkbuilder = new ApkBuilder(apkUnsigned,
+						resResources, dexClasses, privateKey, x509Cert,
+						System.out);
 
 				System.out.println("// ADD SOURCE FOLDER");
 				apkbuilder.addSourceFolder(dirSrc);
-
-				System.out.println("// ADD ASSETS");
-				apkbuilder.addFile(jarAndroid, "assets");
-				apkbuilder.addFile(zipProject, "assets");
 
 				System.out.println("// ADD NATIVE LIBS");
 				apkbuilder.addNativeLibraries(dirLibs);
