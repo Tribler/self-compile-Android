@@ -99,8 +99,12 @@ public class MainActivity extends Activity {
 				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 				File dirProj = new File(dirRoot, proj_name);
+				File dirSrc = new File(dirProj, "src");
+				File dirRes = new File(dirProj, "res");
+				File dirLibs = new File(dirProj, "libs");
 				File dirAssets = new File(dirProj, "assets");
 				File dirBin = new File(dirProj, "bin");
+				File dirDexedLibs = new File(dirBin, "dexedLibs");
 
 				File xmlMan = new File(dirProj, "AndroidManifest.xml");
 				File jarAndroid = new File(dirAssets, target_platform + ".jar");
@@ -112,24 +116,28 @@ public class MainActivity extends Activity {
 				Util.listRecursive(dirRoot);
 
 				System.out.println("// EXTRACT PROJECT");
+				dirSrc.mkdirs();
+				dirRes.mkdirs();
+				dirLibs.mkdirs();
 				dirAssets.mkdirs();
 				dirBin.mkdirs();
+				dirDexedLibs.mkdirs();
 
 				Util.copy(getAssets().open(xmlMan.getName()), xmlMan);
 
 				Util.copy(getAssets().open(jarAndroid.getName()), jarAndroid);
 
 				InputStream zipSrc = getAssets().open("src.zip");
-				Util.unzip(zipSrc, dirProj);
+				Util.unzip(zipSrc, dirSrc);
 
 				InputStream zipRes = getAssets().open("res.zip");
-				Util.unzip(zipRes, dirProj);
+				Util.unzip(zipRes, dirRes);
 
 				InputStream zipLibs = getAssets().open("libs.zip");
-				Util.unzip(zipLibs, dirProj);
+				Util.unzip(zipLibs, dirLibs);
 
 				InputStream zipDexedLibs = getAssets().open("dexedLibs.zip");
-				Util.unzip(zipDexedLibs, dirBin);
+				Util.unzip(zipDexedLibs, dirDexedLibs);
 
 				// DEBUG
 				Util.listRecursive(dirProj);
