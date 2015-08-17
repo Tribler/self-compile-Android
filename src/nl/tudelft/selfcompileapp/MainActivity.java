@@ -1,6 +1,7 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.security.PrivateKey;
@@ -186,10 +187,11 @@ public class MainActivity extends Activity {
 				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 				File dirProj = new File(dirRoot, proj_name);
-				File dirAssets = new File(dirProj, "assets");
 				File dirGen = new File(dirProj, "gen");
 				File dirRes = new File(dirProj, "res");
+				File dirAssets = new File(dirProj, "assets");
 				File dirBin = new File(dirProj, "bin");
+
 				// File dirBinRes = new File(dirBin, "res");
 				// File dirCrunch = new File(dirBinRes, "crunch");
 
@@ -269,10 +271,11 @@ public class MainActivity extends Activity {
 				File dirSrc = new File(dirProj, "src");
 				File dirGen = new File(dirProj, "gen");
 				File dirLibs = new File(dirProj, "libs");
+				File dirAssets = new File(dirProj, "assets");
 				File dirBin = new File(dirProj, "bin");
 				File dirClasses = new File(dirBin, "classes");
 
-				File jarAndroid = new File(dirRoot, target_platform + ".jar");
+				File jarAndroid = new File(dirAssets, target_platform + ".jar");
 
 				dirClasses.mkdirs();
 
@@ -442,10 +445,10 @@ public class MainActivity extends Activity {
 				File dirRoot = Environment
 						.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 				File dirProj = new File(dirRoot, proj_name);
-				File dirAssets = new File(dirProj, "assets");
 				File dirSrc = new File(dirProj, "src");
 				File dirRes = new File(dirProj, "res");
 				File dirLibs = new File(dirProj, "libs");
+				File dirAssets = new File(dirProj, "assets");
 				File dirBin = new File(dirProj, "bin");
 				File dirDexedLibs = new File(dirBin, "dexedLibs");
 				File dirDist = new File(dirProj, "dist");
@@ -583,11 +586,18 @@ public class MainActivity extends Activity {
 	}
 
 	private class InstallApk extends AsyncTask<Object, Object, Object> {
+		Uri url;
 
 		@Override
 		protected void onPostExecute(Object result) {
 			Button btnInstall = (Button) findViewById(R.id.btnInstall);
 			btnInstall.setEnabled(true);
+
+			Intent intent = new Intent(Intent.ACTION_VIEW);
+			intent.setDataAndType(url,
+					"application/vnd.android.package-archive");
+			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			startActivity(intent);
 		}
 
 		@Override
@@ -598,14 +608,12 @@ public class MainActivity extends Activity {
 				File dirProj = new File(dirRoot, proj_name);
 				File dirDist = new File(dirProj, "dist");
 
-				File apkSigned = new File(dirDist, proj_name + ".unaligned.apk");
+				File apk = new File(dirDist, proj_name + ".unaligned.apk");
+				File apkCopy = new File(dirRoot, proj_name + ".unaligned.apk");
 
 				System.out.println("// INSTALL APK");
-				Intent intent = new Intent(Intent.ACTION_VIEW);
-				intent.setDataAndType(Uri.fromFile(apkSigned),
-						"application/vnd.android.package-archive");
-				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				startActivity(intent);
+				Util.copy(apk, new FileOutputStream(apkCopy));
+				url = Uri.fromFile(apkCopy);
 
 			} catch (Exception e) {
 
