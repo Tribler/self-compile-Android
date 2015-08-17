@@ -610,6 +610,9 @@ public class MainActivity extends Activity {
 
 				File apk = new File(dirDist, proj_name + ".unaligned.apk");
 				File apkCopy = new File(dirRoot, proj_name + ".unaligned.apk");
+				if (apkCopy.exists()) {
+					apkCopy.delete();
+				}
 
 				System.out.println("// INSTALL APK");
 				Util.copy(apk, new FileOutputStream(apkCopy));
