@@ -1,17 +1,11 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Locale;
-
-import com.android.dex.Dex;
-import com.android.dx.merge.CollisionPolicy;
-import com.android.dx.merge.DexMerger;
-import com.android.sdklib.build.ApkBuilder;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -21,6 +15,11 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
 import android.widget.Button;
+
+import com.android.dex.Dex;
+import com.android.dx.merge.CollisionPolicy;
+import com.android.dx.merge.DexMerger;
+import com.android.sdklib.build.ApkBuilder;
 
 public class MainActivity extends Activity {
 
@@ -116,23 +115,21 @@ public class MainActivity extends Activity {
 				dirAssets.mkdirs();
 				dirBin.mkdirs();
 
-				Util.copyFile(getAssets().open(xmlMan.getName()),
-						new FileOutputStream(xmlMan));
+				Util.copy(getAssets().open(xmlMan.getName()), xmlMan);
 
-				Util.copyFile(getAssets().open(jarAndroid.getName()),
-						new FileOutputStream(jarAndroid));
+				Util.copy(getAssets().open(jarAndroid.getName()), jarAndroid);
 
 				InputStream zipSrc = getAssets().open("src.zip");
-				Util.unZip(zipSrc, dirProj);
+				Util.unzip(zipSrc, dirProj);
 
 				InputStream zipRes = getAssets().open("res.zip");
-				Util.unZip(zipRes, dirProj);
+				Util.unzip(zipRes, dirProj);
 
 				InputStream zipLibs = getAssets().open("libs.zip");
-				Util.unZip(zipLibs, dirProj);
+				Util.unzip(zipLibs, dirProj);
 
 				InputStream zipDexedLibs = getAssets().open("dexedLibs.zip");
-				Util.unZip(zipDexedLibs, dirBin);
+				Util.unzip(zipDexedLibs, dirBin);
 
 				// DEBUG
 				Util.listRecursive(dirProj);
@@ -471,8 +468,8 @@ public class MainActivity extends Activity {
 
 				System.out.println("// ADD LIB RESOURCES");
 				for (String lib : proj_libs) {
-					File dexLib = new File(dirDexedLibs, lib);
-					apkbuilder.addResourcesFromJar(dexLib);
+					File jarLib = new File(dirLibs, lib);
+					apkbuilder.addResourcesFromJar(jarLib);
 				}
 
 				System.out.println("// ZIP & ADD ASSETS");
@@ -481,16 +478,16 @@ public class MainActivity extends Activity {
 				String strAssets = "assets" + File.separator;
 				apkbuilder.addFile(xmlMan, strAssets + xmlMan.getName());
 
-				Util.zipFolder(dirSrc, zipSrc);
+				Util.zip(dirSrc, zipSrc);
 				apkbuilder.addFile(zipSrc, strAssets + zipSrc.getName());
 
-				Util.zipFolder(dirRes, zipRes);
+				Util.zip(dirRes, zipRes);
 				apkbuilder.addFile(zipRes, strAssets + zipRes.getName());
 
-				Util.zipFolder(dirLibs, zipLibs);
+				Util.zip(dirLibs, zipLibs);
 				apkbuilder.addFile(zipLibs, strAssets + zipLibs.getName());
 
-				Util.zipFolder(dirDexedLibs, zipDexedLibs);
+				Util.zip(dirDexedLibs, zipDexedLibs);
 				apkbuilder.addFile(zipDexedLibs,
 						strAssets + zipDexedLibs.getName());
 

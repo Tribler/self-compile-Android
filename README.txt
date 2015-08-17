@@ -10,5 +10,9 @@ zipsigner-lib-1.17.jar
 
 Assets:
 
-android-18.zip (zipped android.jar API 18)
-SelfCompileApp.zip (zipped project src)
+android-18.jar
+AndroidManifest.xml
+src.zip
+res.zip
+libs.zip
+dexedLibs.zip

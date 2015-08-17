@@ -8,82 +8,22 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class Util {
 
-	/**
-	 * @source http://stackoverflow.com/a/27050680
-	 */
-	public static void unZip(InputStream zipFile, File targetDir)
-			throws IOException {
-		ZipInputStream in = new ZipInputStream(new BufferedInputStream(zipFile));
-		try {
-			ZipEntry entry;
-			int count;
-			byte[] buffer = new byte[8192];
-			while ((entry = in.getNextEntry()) != null) {
-
-				File file = new File(targetDir, entry.getName());
-				File dir = entry.isDirectory() ? file : file.getParentFile();
-
-				if (!dir.isDirectory() && !dir.mkdirs()) {
-					throw new FileNotFoundException(
-							"Failed to ensure directory: "
-									+ dir.getAbsolutePath());
-				}
-				if (entry.isDirectory()) {
-					continue;
-				}
-				FileOutputStream out = new FileOutputStream(file);
-				try {
-					while ((count = in.read(buffer)) != -1) {
-						out.write(buffer, 0, count);
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				} finally {
-					out.close();
-				}
-				/*
-				 * if time should be restored as well long time = ze.getTime();
-				 * if (time > 0) file.setLastModified(time);
-				 */
+	public static void listRecursive(File path) {
+		if (path.isDirectory()) {
+			for (File child : path.listFiles()) {
+				listRecursive(child);
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			in.close();
 		}
-	}
-
-	/**
-	 * @source http://stackoverflow.com/a/26676033
-	 */
-	public static void zipFolder(File srcFile, File outZip) {
-		try {
-			FileOutputStream fos = new FileOutputStream(outZip);
-			ZipOutputStream zos = new ZipOutputStream(fos);
-
-			File[] files = srcFile.listFiles();
-			for (int i = 0; i < files.length; i++) {
-
-				byte[] buffer = new byte[1024];
-				FileInputStream fis = new FileInputStream(files[i]);
-				zos.putNextEntry(new ZipEntry(files[i].getName()));
-				int length;
-				while ((length = fis.read(buffer)) > 0) {
-					zos.write(buffer, 0, length);
-				}
-				zos.closeEntry();
-				fis.close();
-			}
-			zos.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		System.out.println(path.getAbsolutePath());
 	}
 
 	/**
@@ -98,29 +38,100 @@ public class Util {
 		path.delete();
 	}
 
-	public static void listRecursive(File path) {
-		if (path.isDirectory()) {
-			for (File child : path.listFiles()) {
-				listRecursive(child);
+	/**
+	 * @source http://stackoverflow.com/a/27050680
+	 */
+	public static void unzip(InputStream zipFile, File targetDirectory)
+			throws IOException {
+		ZipInputStream zis = new ZipInputStream(
+				new BufferedInputStream(zipFile));
+		try {
+			ZipEntry ze;
+			int count;
+			byte[] buffer = new byte[8192];
+			while ((ze = zis.getNextEntry()) != null) {
+				File file = new File(targetDirectory, ze.getName());
+				File dir = ze.isDirectory() ? file : file.getParentFile();
+				if (!dir.isDirectory() && !dir.mkdirs())
+					throw new FileNotFoundException(
+							"Failed to ensure directory: "
+									+ dir.getAbsolutePath());
+				if (ze.isDirectory())
+					continue;
+				FileOutputStream fout = new FileOutputStream(file);
+				try {
+					while ((count = zis.read(buffer)) != -1)
+						fout.write(buffer, 0, count);
+				} finally {
+					fout.close();
+				}
+				/*
+				 * if time should be restored as well long time = ze.getTime();
+				 * if (time > 0) file.setLastModified(time);
+				 */
 			}
+		} finally {
+			zis.close();
 		}
-		System.out.println(path.getAbsolutePath());
 	}
 
 	/**
-	 * @source http://www.journaldev.com/861/4-ways-to-copy-file-in-java
+	 * @source http://stackoverflow.com/a/1399432
 	 */
-	public static void copyFile(InputStream is, OutputStream os)
-			throws IOException {
+	public static void zip(File directory, File zipfile) throws IOException {
+		URI base = directory.toURI();
+		Deque<File> queue = new LinkedList<File>();
+		queue.push(directory);
+		OutputStream out = new FileOutputStream(zipfile);
+		ZipOutputStream zout = new ZipOutputStream(out);
 		try {
-			byte[] buffer = new byte[1024];
-			int length;
-			while ((length = is.read(buffer)) > 0) {
-				os.write(buffer, 0, length);
+			while (!queue.isEmpty()) {
+				directory = queue.pop();
+				for (File kid : directory.listFiles()) {
+					String name = base.relativize(kid.toURI()).getPath();
+					if (kid.isDirectory()) {
+						queue.push(kid);
+						name = name.endsWith("/") ? name : name + "/";
+						zout.putNextEntry(new ZipEntry(name));
+					} else {
+						zout.putNextEntry(new ZipEntry(name));
+						copy(kid, zout);
+						zout.closeEntry();
+					}
+				}
 			}
 		} finally {
-			is.close();
-			os.close();
+			zout.close();
+		}
+	}
+
+	public static void copy(InputStream in, OutputStream out)
+			throws IOException {
+		byte[] buffer = new byte[1024];
+		while (true) {
+			int readCount = in.read(buffer);
+			if (readCount < 0) {
+				break;
+			}
+			out.write(buffer, 0, readCount);
+		}
+	}
+
+	public static void copy(File file, OutputStream out) throws IOException {
+		InputStream in = new FileInputStream(file);
+		try {
+			copy(in, out);
+		} finally {
+			in.close();
+		}
+	}
+
+	public static void copy(InputStream in, File file) throws IOException {
+		OutputStream out = new FileOutputStream(file);
+		try {
+			copy(in, out);
+		} finally {
+			out.close();
 		}
 	}
 
