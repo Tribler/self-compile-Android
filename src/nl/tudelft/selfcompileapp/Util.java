@@ -2,6 +2,7 @@ package nl.tudelft.selfcompileapp;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class Util {
 
@@ -41,7 +43,6 @@ public class Util {
 						out.write(buffer, 0, count);
 					}
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} finally {
 					out.close();
@@ -52,10 +53,36 @@ public class Util {
 				 */
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
 			in.close();
+		}
+	}
+
+	/**
+	 * @source http://stackoverflow.com/a/26676033
+	 */
+	public static void zipFolder(File srcFile, File outZip) {
+		try {
+			FileOutputStream fos = new FileOutputStream(outZip);
+			ZipOutputStream zos = new ZipOutputStream(fos);
+
+			File[] files = srcFile.listFiles();
+			for (int i = 0; i < files.length; i++) {
+
+				byte[] buffer = new byte[1024];
+				FileInputStream fis = new FileInputStream(files[i]);
+				zos.putNextEntry(new ZipEntry(files[i].getName()));
+				int length;
+				while ((length = fis.read(buffer)) > 0) {
+					zos.write(buffer, 0, length);
+				}
+				zos.closeEntry();
+				fis.close();
+			}
+			zos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
