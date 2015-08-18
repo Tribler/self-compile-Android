@@ -370,40 +370,8 @@ public class MainActivity extends Activity {
 					File dexLib = new File(dirDexedLibs, jarLib.getName());
 					if (!dexLib.exists()) {
 
-						// limit jar size to prevent dx memory overflow
-						int split = Util.setMaxJarSize(jarLib);
-						if (split > 1) {
-
-							// dex all jar parts
-							for (int i = 1; i <= split; i++) {
-
-								// sequence name
-								File jarLibPart = new File(jarLib.getParent(), i + "-" + jarLib.getName());
-								File dexLibPart = new File(dirDexedLibs, jarLibPart.getName());
-
-								com.android.dx.command.dexer.Main.main(new String[] { "--verbose",
-										"--output=" + dexLibPart.getPath(), jarLibPart.getPath() });
-
-								jarLibPart.delete();
-
-								// merge
-								if (i > 1) {
-									Dex merged = new DexMerger(new Dex(dexLib), new Dex(dexLibPart),
-											CollisionPolicy.FAIL).merge();
-									merged.writeTo(dexLib);
-
-									dexLibPart.delete();
-
-								} else {
-									// rename first dex part to original
-									dexLibPart.renameTo(dexLib);
-								}
-							}
-						} else {
-							// dex single jar
-							com.android.dx.command.dexer.Main.main(
-									new String[] { "--verbose", "--output=" + dexLib.getPath(), jarLib.getPath() });
-						}
+						com.android.dx.command.dexer.Main
+								.main(new String[] { "--verbose", "--output=" + dexLib.getPath(), jarLib.getPath() });
 					}
 				}
 
