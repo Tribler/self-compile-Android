@@ -8,7 +8,6 @@
     <string name="btnAidl">Convert aidl</string>
     <string name="btnAapt">Pack assets</string>
     <string name="btnCompile">Compile java</string>
-    <string name="btnDexLibs">Dex libs</string>
     <string name="btnDex">Dex classes</string>
     <string name="btnApk">Build apk</string>
     <string name="btnSign">Sign apk</string>

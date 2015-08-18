@@ -79,15 +79,20 @@ public class Util {
 
 	/**
 	 * Split jar file if larger than max size
+	 * 
+	 * @return amount of files created
 	 */
-	public static void setMaxJarSize(File jar) throws FileNotFoundException, IOException {
+	public static int setMaxJarSize(File jar) throws FileNotFoundException, IOException {
 		if (jar.length() > MAX_JAR_SIZE) {
-			File dirTemp = new File(jar.getParent(), "temp" + System.currentTimeMillis());
+			File dirTemp = new File(jar.getParent(), "temp-" + jar.getName());
 			dirTemp.mkdirs();
 			unzip(new FileInputStream(jar), dirTemp);
 			jar.delete();
-			zip(dirTemp, jar, MAX_JAR_SIZE);
+			int i = zip(dirTemp, jar, MAX_JAR_SIZE);
+			dirTemp.delete();
+			return i;
 		}
+		return 1;
 	}
 
 	public static void zip(File directory, File zipFile) throws IOException {
@@ -99,7 +104,7 @@ public class Util {
 	}
 
 	private static ZipOutputStream newZipOutputStream(File path, int i) throws IOException {
-		File partial = new File(path.getParent(), i + path.getName());
+		File partial = new File(path.getParent(), i + "-" + path.getName());
 		FileOutputStream dest = new FileOutputStream(partial);
 		return new ZipOutputStream(new BufferedOutputStream(dest));
 	}
@@ -108,16 +113,19 @@ public class Util {
 	 * Modified to support max file size.
 	 * 
 	 * @source http://stackoverflow.com/a/1399432
+	 * 
+	 * @return amount of files created
 	 */
-	private static void zip(File directory, File zipFile, long maxFileSize) throws IOException {
+	private static int zip(File directory, File zipFile, long maxFileSize) throws IOException {
 		URI base = directory.toURI();
 		Deque<File> queue = new LinkedList<File>();
 		queue.push(directory);
+		int i = 1;
 		ZipOutputStream zout = null;
 		try {
 			// get part name
-			zout = newZipOutputStream(zipFile, 0);
-			int i = 0;
+			zout = newZipOutputStream(zipFile, i);
+
 			long sizeCounter = 0;
 			while (!queue.isEmpty()) {
 				directory = queue.pop();
@@ -146,6 +154,7 @@ public class Util {
 					}
 				}
 			}
+			return i;
 		} finally {
 			if (zout != null) {
 				zout.close();

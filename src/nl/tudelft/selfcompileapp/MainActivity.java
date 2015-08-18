@@ -52,11 +52,6 @@ public class MainActivity extends Activity {
 		new CompileJava().execute();
 	}
 
-	public void dexlibs(View btnDexLibs) {
-		btnDexLibs.setEnabled(false);
-		new DexLibs().execute();
-	}
-
 	public void dex(View btnDex) {
 		btnDex.setEnabled(false);
 		new DexMerge().execute();
@@ -353,52 +348,6 @@ public class MainActivity extends Activity {
 
 	}
 
-	private class DexLibs extends AsyncTask<Object, Object, Object> {
-
-		@Override
-		protected void onPostExecute(Object result) {
-			Button btnDexLibs = (Button) findViewById(R.id.btnDexLibs);
-			btnDexLibs.setEnabled(true);
-		}
-
-		@Override
-		protected Object doInBackground(Object... params) {
-			try {
-				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, getString(R.string.app_name));
-				File dirLibs = new File(dirProj, "libs");
-				File dirBin = new File(dirProj, "bin");
-				File dirDexedLibs = new File(dirBin, "dexedLibs");
-
-				dirDexedLibs.mkdirs();
-
-				System.out.println("// PRE-DEX LIBS");
-				for (File jarLib : dirLibs.listFiles()) {
-					if (jarLib.isDirectory()) {
-						continue;
-					}
-					File dexLib = new File(dirDexedLibs, jarLib.getName());
-					if (!dexLib.exists()) {
-						// limit jar size to prevent dx memory overflow
-						Util.setMaxJarSize(jarLib);
-
-						com.android.dx.command.dexer.Main
-								.main(new String[] { "--verbose", "--output=" + dexLib.getPath(), jarLib.getPath() });
-					}
-				}
-
-				// DEBUG
-				Util.listRecursive(dirBin);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-			}
-			return null;
-		}
-
-	}
-
 	private class DexMerge extends AsyncTask<Object, Object, Object> {
 
 		@Override
@@ -412,17 +361,66 @@ public class MainActivity extends Activity {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 				File dirProj = new File(dirRoot, getString(R.string.app_name));
+				File dirLibs = new File(dirProj, "libs");
 				File dirBin = new File(dirProj, "bin");
 				File dirClasses = new File(dirBin, "classes");
 				File dirDexedLibs = new File(dirBin, "dexedLibs");
 
 				File dexClasses = new File(dirBin, "classes.dex");
 
+				dirDexedLibs.mkdirs();
+
+				System.out.println("// PRE-DEX LIBS");
+				for (File jarLib : dirLibs.listFiles()) {
+
+					// skip native libs
+					if (jarLib.isDirectory()) {
+						continue;
+					}
+
+					// check if jar is pre-dexed
+					File dexLib = new File(dirDexedLibs, jarLib.getName());
+					if (!dexLib.exists()) {
+
+						// limit jar size to prevent dx memory overflow
+						int split = Util.setMaxJarSize(jarLib);
+						if (split > 1) {
+
+							// dex all jar parts
+							for (int i = 1; i < split; i++) {
+
+								// jar lib new sequence name
+								jarLib = new File(jarLib.getParent(), i + "-" + dexLib.getName());
+
+								// dex lib has the original jar name
+								File dexLibPart = new File(dirDexedLibs, dexLib.getName());
+
+								com.android.dx.command.dexer.Main.main(new String[] { "--verbose",
+										"--output=" + dexLibPart.getPath(), jarLib.getPath() });
+
+								// merge
+								if (i > 1) {
+									Dex merged = new DexMerger(new Dex(dexLib), new Dex(dexLibPart),
+											CollisionPolicy.FAIL).merge();
+									merged.writeTo(dexLib);
+								}
+							}
+						} else {
+							// dex single jar
+							com.android.dx.command.dexer.Main.main(
+									new String[] { "--verbose", "--output=" + dexLib.getPath(), jarLib.getPath() });
+						}
+					}
+				}
+
+				// DEBUG
+				Util.listRecursive(dirBin);
+
 				System.out.println("// DEX CLASSES");
 				com.android.dx.command.dexer.Main
 						.main(new String[] { "--verbose", "--output=" + dexClasses.getPath(), dirClasses.getPath() });
 
-				System.out.println("// MERGE DEXED LIBS");
+				System.out.println("// MERGE PRE-DEXED LIBS");
 				for (File dexLib : dirDexedLibs.listFiles()) {
 					Dex merged = new DexMerger(new Dex(dexClasses), new Dex(dexLib), CollisionPolicy.FAIL).merge();
 					merged.writeTo(dexClasses);
