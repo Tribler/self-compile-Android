@@ -374,7 +374,7 @@ public class MainActivity extends Activity {
 						if (split > 1) {
 
 							// dex all jar parts
-							for (int i = 1; i < split; i++) {
+							for (int i = 1; i <= split; i++) {
 
 								// sequence name
 								File jarLibPart = new File(jarLib.getParent(), i + "-" + jarLib.getName());
