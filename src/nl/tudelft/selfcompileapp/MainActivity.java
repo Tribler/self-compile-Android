@@ -103,9 +103,6 @@ public class MainActivity extends Activity {
 				System.out.println("// DELETE PROJECT FOLDER");
 				Util.deleteRecursive(dirProj);
 
-				// DEBUG
-				Util.listRecursive(dirRoot);
-
 				System.out.println("// EXTRACT PROJECT");
 				dirSrc.mkdirs();
 				dirRes.mkdirs();
@@ -129,9 +126,6 @@ public class MainActivity extends Activity {
 
 				InputStream zipDexedLibs = getAssets().open("dexedLibs.zip");
 				Util.unzip(zipDexedLibs, dirDexedLibs);
-
-				// DEBUG
-				Util.listRecursive(dirProj);
 
 			} catch (Exception e) {
 
@@ -252,9 +246,6 @@ public class MainActivity extends Activity {
 				// + ap_Resources.getPath());
 				// System.out.println(exitCode);
 
-				// DEBUG
-				Util.listRecursive(dirProj);
-
 			} catch (Exception e) {
 
 				e.printStackTrace();
@@ -304,10 +295,6 @@ public class MainActivity extends Activity {
 						new String[] { "-1.5", "-showversion", "-verbose", "-deprecation", "-bootclasspath", strBootCP,
 								"-cp", strClassPath, "-d", dirClasses.getPath(), dirGen.getPath(), dirSrc.getPath() },
 						new PrintWriter(System.out), new PrintWriter(System.err), new CompileProgress());
-
-				// DEBUG
-				Util.listRecursive(dirGen);
-				Util.listRecursive(dirBin);
 
 			} catch (Exception e) {
 
@@ -389,20 +376,26 @@ public class MainActivity extends Activity {
 							// dex all jar parts
 							for (int i = 1; i < split; i++) {
 
-								// jar lib new sequence name
-								jarLib = new File(jarLib.getParent(), i + "-" + dexLib.getName());
-
-								// dex lib has the original jar name
-								File dexLibPart = new File(dirDexedLibs, dexLib.getName());
+								// sequence name
+								File jarLibPart = new File(jarLib.getParent(), i + "-" + jarLib.getName());
+								File dexLibPart = new File(dirDexedLibs, jarLibPart.getName());
 
 								com.android.dx.command.dexer.Main.main(new String[] { "--verbose",
-										"--output=" + dexLibPart.getPath(), jarLib.getPath() });
+										"--output=" + dexLibPart.getPath(), jarLibPart.getPath() });
+
+								jarLibPart.delete();
 
 								// merge
 								if (i > 1) {
 									Dex merged = new DexMerger(new Dex(dexLib), new Dex(dexLibPart),
 											CollisionPolicy.FAIL).merge();
 									merged.writeTo(dexLib);
+
+									dexLibPart.delete();
+
+								} else {
+									// rename first dex part to original
+									dexLibPart.renameTo(dexLib);
 								}
 							}
 						} else {
@@ -413,9 +406,6 @@ public class MainActivity extends Activity {
 					}
 				}
 
-				// DEBUG
-				Util.listRecursive(dirBin);
-
 				System.out.println("// DEX CLASSES");
 				com.android.dx.command.dexer.Main
 						.main(new String[] { "--verbose", "--output=" + dexClasses.getPath(), dirClasses.getPath() });
@@ -425,9 +415,6 @@ public class MainActivity extends Activity {
 					Dex merged = new DexMerger(new Dex(dexClasses), new Dex(dexLib), CollisionPolicy.FAIL).merge();
 					merged.writeTo(dexClasses);
 				}
-
-				// DEBUG
-				Util.listRecursive(dirBin);
 
 			} catch (Exception e) {
 
@@ -510,9 +497,6 @@ public class MainActivity extends Activity {
 				apkbuilder.setDebugMode(true);
 				apkbuilder.sealApk();
 
-				// DEBUG
-				Util.listRecursive(dirDist);
-
 			} catch (Exception e) {
 
 				e.printStackTrace();
@@ -558,9 +542,6 @@ public class MainActivity extends Activity {
 				kellinwood.security.zipsigner.optional.CustomKeySigner.signZip(zipsigner, keystorePath, keystorePw,
 						certAlias, certPw, signatureAlgorithm, apkUnsigned.getPath(), apkSigned.getPath());
 
-				// DEBUG
-				Util.listRecursive(dirDist);
-
 			} catch (Exception e) {
 
 				e.printStackTrace();
@@ -581,14 +562,7 @@ public class MainActivity extends Activity {
 		@Override
 		protected Object doInBackground(Object... params) {
 			try {
-				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, getString(R.string.app_name));
-				File dirDist = new File(dirProj, "dist");
-
 				System.out.println("// RUN ZIP ALIGN"); // TODO
-
-				// DEBUG
-				Util.listRecursive(dirDist);
 
 			} catch (Exception e) {
 
