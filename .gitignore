@@ -1,3 +1,5 @@
 bin/
 gen/
 obj/
+assets/
+libs/
