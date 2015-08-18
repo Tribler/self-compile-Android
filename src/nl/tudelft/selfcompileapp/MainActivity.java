@@ -99,6 +99,7 @@ public class MainActivity extends Activity {
 
 				File xmlMan = new File(dirProj, "AndroidManifest.xml");
 				File jarAndroid = new File(dirAssets, getString(R.string.platform) + ".jar");
+				File jksEmbedded = new File(dirAssets, getString(R.string.keystore));
 
 				System.out.println("// DELETE PROJECT FOLDER");
 				Util.deleteRecursive(dirProj);
@@ -114,6 +115,8 @@ public class MainActivity extends Activity {
 				Util.copy(getAssets().open(xmlMan.getName()), xmlMan);
 
 				Util.copy(getAssets().open(jarAndroid.getName()), jarAndroid);
+
+				Util.copy(getAssets().open(jksEmbedded.getName()), jksEmbedded);
 
 				InputStream zipSrc = getAssets().open("src.zip");
 				Util.unzip(zipSrc, dirSrc);
@@ -447,6 +450,7 @@ public class MainActivity extends Activity {
 
 				System.out.println("// ZIP & ADD ASSETS");
 				// android.jar already packed by aapt
+				// Embedded.jks already packed by aapt
 
 				String strAssets = "assets" + File.separator;
 				apkbuilder.addFile(xmlMan, strAssets + xmlMan.getName());
