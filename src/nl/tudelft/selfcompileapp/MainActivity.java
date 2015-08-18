@@ -195,7 +195,10 @@ public class MainActivity extends Activity {
 				exitCode = aapt.fnExecute("aapt p -f -v -M " + xmlMan.getPath() + " -F " + ap_Resources.getPath()
 						+ " -I " + jarAndroid.getPath() + " -A " + dirAssets.getPath() + " -S " + dirRes.getPath()
 						+ " -J " + dirGen.getPath());
-				System.out.println(exitCode);
+
+				if (exitCode != 0) {
+					throw new Exception("AAPT exit(" + exitCode + ")");
+				}
 
 				// System.out.println("// CREATE R.JAVA");
 
@@ -219,7 +222,6 @@ public class MainActivity extends Activity {
 
 				// exitCode = aapt.fnExecute("aapt c -v -S " + dirRes.getPath()
 				// + " -C " + dirCrunch.getPath());
-				// System.out.println(exitCode);
 				//
 
 				// System.out.println("// RUN AAPT");
@@ -244,7 +246,6 @@ public class MainActivity extends Activity {
 				// + dirAssets.getPath() + " -I "
 				// + jarAndroid.getPath() + " -F "
 				// + ap_Resources.getPath());
-				// System.out.println(exitCode);
 
 			} catch (Exception e) {
 
