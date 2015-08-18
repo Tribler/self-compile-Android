@@ -18,7 +18,7 @@ import java.util.zip.ZipOutputStream;
 
 public class Util {
 
-	public static final long MAX_JAR_SIZE = 950000;
+	public static final long MAX_JAR_SIZE = 10000000; // 10 MB
 
 	/**
 	 * Split jar file if larger than max size
