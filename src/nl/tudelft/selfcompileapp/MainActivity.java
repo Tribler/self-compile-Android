@@ -26,12 +26,6 @@ import com.android.sdklib.build.ApkBuilder;
 
 public class MainActivity extends Activity {
 
-	private final String target_platform = "android-18";
-	private final String proj_name = "SelfCompileApp";
-	private final String[] proj_libs = { "kellinwood-logging-lib-1.1.jar", "zipio-lib-1.8.jar",
-			"zipsigner-lib-1.17.jar", "sdklib-24.3.4.jar", "dx-23.0.0.jar", "ecj-4.5-A.jar", "ecj-4.5-B.jar",
-			"ecj-4.5-C.jar" };
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -100,7 +94,7 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, proj_name);
+				File dirProj = new File(dirRoot, getString(R.string.app_name));
 				File dirSrc = new File(dirProj, "src");
 				File dirRes = new File(dirProj, "res");
 				File dirLibs = new File(dirProj, "libs");
@@ -109,7 +103,7 @@ public class MainActivity extends Activity {
 				File dirDexedLibs = new File(dirBin, "dexedLibs");
 
 				File xmlMan = new File(dirProj, "AndroidManifest.xml");
-				File jarAndroid = new File(dirAssets, target_platform + ".jar");
+				File jarAndroid = new File(dirAssets, getString(R.string.platform) + ".jar");
 
 				System.out.println("// DELETE PROJECT FOLDER");
 				Util.deleteRecursive(dirProj);
@@ -186,7 +180,7 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, proj_name);
+				File dirProj = new File(dirRoot, getString(R.string.app_name));
 				File dirGen = new File(dirProj, "gen");
 				File dirRes = new File(dirProj, "res");
 				File dirAssets = new File(dirProj, "assets");
@@ -197,7 +191,7 @@ public class MainActivity extends Activity {
 
 				// File xmlBinMan = new File(dirBin, "AndroidManifest.xml");
 				File xmlMan = new File(dirProj, "AndroidManifest.xml");
-				File jarAndroid = new File(dirAssets, target_platform + ".jar");
+				File jarAndroid = new File(dirAssets, getString(R.string.platform) + ".jar");
 				File ap_Resources = new File(dirBin, "resources.ap_");
 
 				dirGen.mkdirs();
@@ -286,7 +280,7 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, proj_name);
+				File dirProj = new File(dirRoot, getString(R.string.app_name));
 				File dirSrc = new File(dirProj, "src");
 				File dirGen = new File(dirProj, "gen");
 				File dirLibs = new File(dirProj, "libs");
@@ -294,14 +288,18 @@ public class MainActivity extends Activity {
 				File dirBin = new File(dirProj, "bin");
 				File dirClasses = new File(dirBin, "classes");
 
-				File jarAndroid = new File(dirAssets, target_platform + ".jar");
+				File jarAndroid = new File(dirAssets, getString(R.string.platform) + ".jar");
 
 				dirClasses.mkdirs();
 
 				String strBootCP = jarAndroid.getPath();
 				String strClassPath = "";
-				for (String lib : proj_libs) {
-					strClassPath += File.pathSeparator + new File(dirLibs, lib).getPath();
+
+				for (File jarLib : dirLibs.listFiles()) {
+					if (jarLib.isDirectory()) {
+						continue;
+					}
+					strClassPath += File.pathSeparator + jarLib.getPath();
 				}
 
 				Locale.setDefault(Locale.ROOT);
@@ -367,7 +365,7 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, proj_name);
+				File dirProj = new File(dirRoot, getString(R.string.app_name));
 				File dirLibs = new File(dirProj, "libs");
 				File dirBin = new File(dirProj, "bin");
 				File dirDexedLibs = new File(dirBin, "dexedLibs");
@@ -375,11 +373,15 @@ public class MainActivity extends Activity {
 				dirDexedLibs.mkdirs();
 
 				System.out.println("// PRE-DEX LIBS");
-				for (String lib : proj_libs) {
-					File jarLib = new File(dirLibs, lib);
-					File dexLib = new File(dirDexedLibs, lib);
-
+				for (File jarLib : dirLibs.listFiles()) {
+					if (jarLib.isDirectory()) {
+						continue;
+					}
+					File dexLib = new File(dirDexedLibs, jarLib.getName());
 					if (!dexLib.exists()) {
+						// limit jar size to prevent dx memory overflow
+						Util.setMaxJarSize(jarLib);
+
 						com.android.dx.command.dexer.Main
 								.main(new String[] { "--verbose", "--output=" + dexLib.getPath(), jarLib.getPath() });
 					}
@@ -409,7 +411,7 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, proj_name);
+				File dirProj = new File(dirRoot, getString(R.string.app_name));
 				File dirBin = new File(dirProj, "bin");
 				File dirClasses = new File(dirBin, "classes");
 				File dirDexedLibs = new File(dirBin, "dexedLibs");
@@ -421,8 +423,7 @@ public class MainActivity extends Activity {
 						.main(new String[] { "--verbose", "--output=" + dexClasses.getPath(), dirClasses.getPath() });
 
 				System.out.println("// MERGE DEXED LIBS");
-				for (String lib : proj_libs) {
-					File dexLib = new File(dirDexedLibs, lib);
+				for (File dexLib : dirDexedLibs.listFiles()) {
 					Dex merged = new DexMerger(new Dex(dexClasses), new Dex(dexLib), CollisionPolicy.FAIL).merge();
 					merged.writeTo(dexClasses);
 				}
@@ -451,7 +452,7 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, proj_name);
+				File dirProj = new File(dirRoot, getString(R.string.app_name));
 				File dirSrc = new File(dirProj, "src");
 				File dirRes = new File(dirProj, "res");
 				File dirLibs = new File(dirProj, "libs");
@@ -460,7 +461,7 @@ public class MainActivity extends Activity {
 				File dirDexedLibs = new File(dirBin, "dexedLibs");
 				File dirDist = new File(dirProj, "dist");
 
-				File apkUnsigned = new File(dirDist, proj_name + ".unsigned.apk");
+				File apkUnsigned = new File(dirDist, getString(R.string.app_name) + ".unsigned.apk");
 				File ap_Resources = new File(dirBin, "resources.ap_");
 				File dexClasses = new File(dirBin, "classes.dex");
 				File xmlMan = new File(dirProj, "AndroidManifest.xml");
@@ -483,8 +484,10 @@ public class MainActivity extends Activity {
 				apkbuilder.addNativeLibraries(dirLibs);
 
 				System.out.println("// ADD LIB RESOURCES");
-				for (String lib : proj_libs) {
-					File jarLib = new File(dirLibs, lib);
+				for (File jarLib : dirLibs.listFiles()) {
+					if (jarLib.isDirectory()) {
+						continue;
+					}
 					apkbuilder.addResourcesFromJar(jarLib);
 				}
 
@@ -532,11 +535,19 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, proj_name);
+				File dirProj = new File(dirRoot, getString(R.string.app_name));
+				File dirAssets = new File(dirProj, "assets");
 				File dirDist = new File(dirProj, "dist");
 
-				File apkUnsigned = new File(dirDist, proj_name + ".unsigned.apk");
-				File apkSigned = new File(dirDist, proj_name + ".unaligned.apk");
+				File apkUnsigned = new File(dirDist, getString(R.string.app_name) + ".unsigned.apk");
+				File apkSigned = new File(dirDist, getString(R.string.app_name) + ".unaligned.apk");
+				File jksEmbedded = new File(dirAssets, getString(R.string.keystore));
+
+				String keystorePath = jksEmbedded.getPath();
+				char[] keystorePw = "android".toCharArray();
+				String certAlias = "androiddebugkey";
+				char[] certPw = "android".toCharArray();
+				String signatureAlgorithm = "SHA1withRSA";
 
 				System.out.println("// RUN ZIP SIGNER");
 				kellinwood.security.zipsigner.ZipSigner zipsigner = new kellinwood.security.zipsigner.ZipSigner();
@@ -546,10 +557,8 @@ public class MainActivity extends Activity {
 						// TODO event.getPercentDone();
 					}
 				});
-
-				zipsigner.setKeymode("testkey"); // TODO
-
-				zipsigner.signZip(apkUnsigned.getPath(), apkSigned.getPath());
+				kellinwood.security.zipsigner.optional.CustomKeySigner.signZip(zipsigner, keystorePath, keystorePw,
+						certAlias, certPw, signatureAlgorithm, apkUnsigned.getPath(), apkSigned.getPath());
 
 				// DEBUG
 				Util.listRecursive(dirDist);
@@ -575,7 +584,7 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, proj_name);
+				File dirProj = new File(dirRoot, getString(R.string.app_name));
 				File dirDist = new File(dirProj, "dist");
 
 				System.out.println("// RUN ZIP ALIGN"); // TODO
@@ -610,11 +619,11 @@ public class MainActivity extends Activity {
 		protected Object doInBackground(Object... params) {
 			try {
 				File dirRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				File dirProj = new File(dirRoot, proj_name);
+				File dirProj = new File(dirRoot, getString(R.string.app_name));
 				File dirDist = new File(dirProj, "dist");
 
-				File apk = new File(dirDist, proj_name + ".unaligned.apk");
-				File apkCopy = new File(dirRoot, proj_name + ".unaligned.apk");
+				File apk = new File(dirDist, getString(R.string.app_name) + ".unaligned.apk");
+				File apkCopy = new File(dirRoot, getString(R.string.app_name) + ".unaligned.apk");
 				if (apkCopy.exists()) {
 					apkCopy.delete();
 				}

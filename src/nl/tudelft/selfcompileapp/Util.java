@@ -1,6 +1,7 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -16,6 +17,8 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class Util {
+
+	public static final long MAX_JAR_SIZE = 750000;
 
 	public static void listRecursive(File path) {
 		if (path.isDirectory()) {
@@ -41,27 +44,26 @@ public class Util {
 	/**
 	 * @source http://stackoverflow.com/a/27050680
 	 */
-	public static void unzip(InputStream zipFile, File targetDirectory)
-			throws IOException {
-		ZipInputStream zis = new ZipInputStream(
-				new BufferedInputStream(zipFile));
+	public static void unzip(InputStream zipFile, File targetDirectory) throws IOException {
+		ZipInputStream zin = new ZipInputStream(new BufferedInputStream(zipFile));
 		try {
 			ZipEntry ze;
 			int count;
 			byte[] buffer = new byte[8192];
-			while ((ze = zis.getNextEntry()) != null) {
+			while ((ze = zin.getNextEntry()) != null) {
 				File file = new File(targetDirectory, ze.getName());
 				File dir = ze.isDirectory() ? file : file.getParentFile();
-				if (!dir.isDirectory() && !dir.mkdirs())
-					throw new FileNotFoundException(
-							"Failed to ensure directory: "
-									+ dir.getAbsolutePath());
-				if (ze.isDirectory())
+				if (!dir.isDirectory() && !dir.mkdirs()) {
+					throw new FileNotFoundException("Failed to ensure directory: " + dir.getAbsolutePath());
+				}
+				if (ze.isDirectory()) {
 					continue;
+				}
 				FileOutputStream fout = new FileOutputStream(file);
 				try {
-					while ((count = zis.read(buffer)) != -1)
+					while ((count = zin.read(buffer)) != -1) {
 						fout.write(buffer, 0, count);
+					}
 				} finally {
 					fout.close();
 				}
@@ -71,42 +73,87 @@ public class Util {
 				 */
 			}
 		} finally {
-			zis.close();
+			zin.close();
 		}
 	}
 
 	/**
+	 * Split jar file if larger than max size
+	 */
+	public static void setMaxJarSize(File jar) throws FileNotFoundException, IOException {
+		if (jar.length() > MAX_JAR_SIZE) {
+			File dirTemp = new File(jar.getParent(), "temp" + System.currentTimeMillis());
+			dirTemp.mkdirs();
+			unzip(new FileInputStream(jar), dirTemp);
+			jar.delete();
+			zip(dirTemp, jar, MAX_JAR_SIZE);
+		}
+	}
+
+	public static void zip(File directory, File zipFile) throws IOException {
+		if (zipFile.getName().endsWith(".jar")) {
+			zip(directory, zipFile, MAX_JAR_SIZE);
+		} else {
+			zip(directory, zipFile, -1);
+		}
+	}
+
+	private static ZipOutputStream newZipOutputStream(File path, int i) throws IOException {
+		File partial = new File(path.getParent(), i + path.getName());
+		FileOutputStream dest = new FileOutputStream(partial);
+		return new ZipOutputStream(new BufferedOutputStream(dest));
+	}
+
+	/**
+	 * Modified to support max file size.
+	 * 
 	 * @source http://stackoverflow.com/a/1399432
 	 */
-	public static void zip(File directory, File zipfile) throws IOException {
+	private static void zip(File directory, File zipFile, long maxFileSize) throws IOException {
 		URI base = directory.toURI();
 		Deque<File> queue = new LinkedList<File>();
 		queue.push(directory);
-		OutputStream out = new FileOutputStream(zipfile);
-		ZipOutputStream zout = new ZipOutputStream(out);
+		ZipOutputStream zout = null;
 		try {
+			// get part name
+			zout = newZipOutputStream(zipFile, 0);
+			int i = 0;
+			long sizeCounter = 0;
 			while (!queue.isEmpty()) {
 				directory = queue.pop();
-				for (File kid : directory.listFiles()) {
-					String name = base.relativize(kid.toURI()).getPath();
-					if (kid.isDirectory()) {
-						queue.push(kid);
+				for (File dirEntry : directory.listFiles()) {
+					// split if max size reached
+					if (sizeCounter > maxFileSize) {
+						zout.close();
+						i++;
+						zout = newZipOutputStream(zipFile, i);
+						sizeCounter = 0;
+					}
+					String name = base.relativize(dirEntry.toURI()).getPath();
+					if (dirEntry.isDirectory()) {
+						queue.push(dirEntry);
 						name = name.endsWith("/") ? name : name + "/";
 						zout.putNextEntry(new ZipEntry(name));
 					} else {
-						zout.putNextEntry(new ZipEntry(name));
-						copy(kid, zout);
+						ZipEntry ze = new ZipEntry(name);
+						zout.putNextEntry(ze);
+						copy(dirEntry, zout);
 						zout.closeEntry();
+						// only count if max size is set
+						if (maxFileSize > 0) {
+							sizeCounter += ze.getCompressedSize();
+						}
 					}
 				}
 			}
 		} finally {
-			zout.close();
+			if (zout != null) {
+				zout.close();
+			}
 		}
 	}
 
-	public static void copy(InputStream in, OutputStream out)
-			throws IOException {
+	public static void copy(InputStream in, OutputStream out) throws IOException {
 		byte[] buffer = new byte[1024];
 		while (true) {
 			int readCount = in.read(buffer);

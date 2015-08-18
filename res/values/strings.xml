@@ -2,6 +2,8 @@
 <resources>
 
     <string name="app_name">SelfCompileApp</string>
+    <string name="platform">android-18</string>
+    <string name="keystore">Embedded.jks</string>
     <string name="btnClean">Clean build</string>
     <string name="btnAidl">Convert aidl</string>
     <string name="btnAapt">Pack assets</string>
