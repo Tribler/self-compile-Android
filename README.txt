@@ -19,12 +19,16 @@ signer    -> zipsigner-lib-1.17.jar
 
 ## NATIVE
 
-aapt      -> Platform_Framework_Base\tools
-aidl      -> Platform_Framework_Base\tools
-androidfw -> Platform_Framework_Base\include
+aapt      -> Platform_Framework_Base\tools\aapt
+aidl      -> Platform_Framework_Base\tools\aidl
+androidfw -> Platform_Framework_Base\include\androidfw
 
-zipalign  -> Platform_Build\tools
-host      -> Platform_Build\lib
+zipalign  -> Platform_Build\tools\zipalign
+host      -> Platform_Build\lib\host
+
+libpng    -> Platform_External_Libpng
+expat     -> Platform_External_Expat
+zlib      -> Platform_External_Zlib
 
 libcutils -> Platform_System_Core\libcutils
 cutils    -> Platform_System_Core\include\cutils
@@ -38,7 +42,10 @@ utils     -> Platform_System_Core\include\utils
 asset_manager.h -> Platform_Framework_Native\include\android
 looper.h        -> Platform_Framework_Native\include\android
 
-zopfli    -> zopfli
+zopfli    -> zopfli\src
+
+ld        -> Tool_Chain_Utils\binutils-2.25\ld
+
 
 
 ### android-4.3_r3.1
