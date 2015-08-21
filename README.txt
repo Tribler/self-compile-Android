@@ -39,6 +39,8 @@ log       -> Platform_System_Core\include\log
 libutils  -> Platform_System_Core\libutils
 utils     -> Platform_System_Core\include\utils
 
+log.h     -> Platform_System_Core\include\android
+
 asset_manager.h -> Platform_Framework_Native\include\android
 looper.h        -> Platform_Framework_Native\include\android
 
@@ -54,7 +56,7 @@ https://developer.android.com/ndk/guides/stable_apis.html#a18
 
 LOCAL_LDLIBS := -llog (liblog)
 
-LOCAL_LDLIBS := -lz (libz)
+LOCAL_LDLIBS := -lz (zlib)
 
 LOCAL_LDLIBS += -landroid (o.a. looper.h)
 
