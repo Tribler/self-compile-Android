@@ -48,4 +48,17 @@ ld        -> Tool_Chain_Utils\binutils-2.25\ld
 
 
 
+# STABLE APIs (at least api level 9)
+
+https://developer.android.com/ndk/guides/stable_apis.html#a18
+
+LOCAL_LDLIBS := -llog (liblog)
+
+LOCAL_LDLIBS := -lz (libz)
+
+LOCAL_LDLIBS += -landroid (o.a. looper.h)
+
+LOCAL_LDLIBS := -ldl (dynamic linker)
+
+
 ### android-4.3_r3.1
