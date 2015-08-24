@@ -67,7 +67,6 @@ public class MakeApkTask extends ProgressStatusTask {
 
 			if (setMsg("PROCESS DEPENDENCIES"))
 				return null;
-			boolean changedLibs = false;
 			for (File jarLib : S.dirLibs.listFiles()) {
 
 				// skip native libs in sub directories
@@ -84,37 +83,27 @@ public class MakeApkTask extends ProgressStatusTask {
 				if (!dexLib.exists()) {
 					com.android.dx.command.dexer.Main
 							.main(new String[] { "--verbose", "--output=" + dexLib.getPath(), jarLib.getPath() });
-					changedLibs = true;
 				}
 			}
 
+			if (setMsg("INTEGRATE DEPENDENCIES"))
+				return null;
 			// dex project classes
 			com.android.dx.command.dexer.Main
 					.main(new String[] { "--verbose", "--output=" + S.dexClasses.getPath(), S.dirClasses.getPath() });
 
-			if (setMsg("INTEGRATE DEPENDENCIES"))
-				return null;
-			if (changedLibs || !S.dexLibs.exists()) {
-				// re-merge dexed libs
-				if (S.dexLibs.exists()) {
-					S.dexLibs.delete();
-				}
-				for (File dexLib : S.dirDexedLibs.listFiles()) {
-					// pre-merge dexed lib into libs.dex
-					Dex merged = new DexMerger(new Dex(S.dexLibs), new Dex(dexLib), CollisionPolicy.FAIL).merge();
-					merged.writeTo(S.dexLibs);
-				}
+			// merge pre-dexed libs
+			for (File dexLib : S.dirDexedLibs.listFiles()) {
+				Dex merged = new DexMerger(new Dex(S.dexClasses), new Dex(dexLib), CollisionPolicy.FAIL).merge();
+				merged.writeTo(S.dexClasses);
 			}
-			// use pre-merged libs
-			Dex merged = new DexMerger(new Dex(S.dexClasses), new Dex(S.dexLibs), CollisionPolicy.FAIL).merge();
-			merged.writeTo(S.dexClasses);
 
+			if (setMsg("PACKAGE APP"))
+				return null;
 			// Do NOT use embedded JarSigner
 			PrivateKey privateKey = null;
 			X509Certificate x509Cert = null;
 
-			if (setMsg("PACKAGE APP"))
-				return null;
 			ApkBuilder apkbuilder = new ApkBuilder(S.apkUnsigned, S.ap_Resources, S.dexClasses, privateKey, x509Cert,
 					System.out);
 
