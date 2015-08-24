@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">SelfCompileApp</string>
+    <string name="appName">SelfCompileApp</string>
     <string name="platform">android-18</string>
     <string name="keystore">Embedded.jks</string>
     <string name="keystorePw">android</string>

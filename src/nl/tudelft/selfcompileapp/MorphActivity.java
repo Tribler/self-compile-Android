@@ -88,7 +88,7 @@ public class MorphActivity extends android.app.Activity {
 		if (savedInstanceState.containsKey("txtAppName")) {
 			txtAppName.setText(savedInstanceState.getString("txtAppName"));
 		} else {
-			txtAppName.setText(getString(R.string.app_name));
+			txtAppName.setText(getString(R.string.appName));
 		}
 	}
 

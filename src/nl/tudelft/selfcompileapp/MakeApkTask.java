@@ -164,7 +164,7 @@ public class MakeApkTask extends ProgressStatusTask {
 
 			if (setMsg("PREPARE INSTALLATION"))
 				return null;
-			String strAppName = app.getString(R.string.app_name);
+			String strAppName = app.getString(R.string.appName);
 			File apkCopy = new File(S.dirRoot, strAppName + ".apk");
 			if (apkCopy.exists()) {
 				apkCopy.delete();
