@@ -88,27 +88,26 @@ public class MakeApkTask extends ProgressStatusTask {
 				}
 			}
 
+			// dex project classes
 			com.android.dx.command.dexer.Main
 					.main(new String[] { "--verbose", "--output=" + S.dexClasses.getPath(), S.dirClasses.getPath() });
 
 			if (setMsg("INTEGRATE DEPENDENCIES"))
 				return null;
-			if (changedLibs) {
+			if (changedLibs || !S.dexLibs.exists()) {
+				// re-merge dexed libs
+				if (S.dexLibs.exists()) {
+					S.dexLibs.delete();
+				}
 				for (File dexLib : S.dirDexedLibs.listFiles()) {
-
 					// pre-merge dexed lib into libs.dex
 					Dex merged = new DexMerger(new Dex(S.dexLibs), new Dex(dexLib), CollisionPolicy.FAIL).merge();
 					merged.writeTo(S.dexLibs);
-
-					// merge dexed lib into classes.dex
-					merged = new DexMerger(new Dex(S.dexClasses), new Dex(dexLib), CollisionPolicy.FAIL).merge();
-					merged.writeTo(S.dexClasses);
 				}
-			} else {
-				// use pre-merged libs
-				Dex merged = new DexMerger(new Dex(S.dexClasses), new Dex(S.dexLibs), CollisionPolicy.FAIL).merge();
-				merged.writeTo(S.dexClasses);
 			}
+			// use pre-merged libs
+			Dex merged = new DexMerger(new Dex(S.dexClasses), new Dex(S.dexLibs), CollisionPolicy.FAIL).merge();
+			merged.writeTo(S.dexClasses);
 
 			// Do NOT use embedded JarSigner
 			PrivateKey privateKey = null;
