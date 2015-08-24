@@ -30,6 +30,7 @@ public class S {
 
 	public static final File ap_Resources = new File(dirBin, "resources.ap_");
 	public static final File dexClasses = new File(dirBin, "classes.dex");
+	public static final File dexLibs = new File(dirBin, "libs.dex");
 	// File xmlBinMan = new File(dirBin, "AndroidManifest.xml");
 
 	public static final File pngAppIcon = new File(dirAssets, "ic_launcher.png");

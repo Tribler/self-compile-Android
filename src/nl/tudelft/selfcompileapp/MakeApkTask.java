@@ -67,6 +67,7 @@ public class MakeApkTask extends ProgressStatusTask {
 
 			if (setMsg("PROCESS DEPENDENCIES"))
 				return null;
+			boolean changedLibs = false;
 			for (File jarLib : S.dirLibs.listFiles()) {
 
 				// skip native libs in sub directories
@@ -83,6 +84,7 @@ public class MakeApkTask extends ProgressStatusTask {
 				if (!dexLib.exists()) {
 					com.android.dx.command.dexer.Main
 							.main(new String[] { "--verbose", "--output=" + dexLib.getPath(), jarLib.getPath() });
+					changedLibs = true;
 				}
 			}
 
@@ -91,10 +93,20 @@ public class MakeApkTask extends ProgressStatusTask {
 
 			if (setMsg("INTEGRATE DEPENDENCIES"))
 				return null;
-			for (File dexLib : S.dirDexedLibs.listFiles()) {
+			if (changedLibs) {
+				for (File dexLib : S.dirDexedLibs.listFiles()) {
 
-				// merge dexed lib into classes.dex
-				Dex merged = new DexMerger(new Dex(S.dexClasses), new Dex(dexLib), CollisionPolicy.FAIL).merge();
+					// pre-merge dexed lib into libs.dex
+					Dex merged = new DexMerger(new Dex(S.dexLibs), new Dex(dexLib), CollisionPolicy.FAIL).merge();
+					merged.writeTo(S.dexLibs);
+
+					// merge dexed lib into classes.dex
+					merged = new DexMerger(new Dex(S.dexClasses), new Dex(dexLib), CollisionPolicy.FAIL).merge();
+					merged.writeTo(S.dexClasses);
+				}
+			} else {
+				// use pre-merged libs
+				Dex merged = new DexMerger(new Dex(S.dexClasses), new Dex(S.dexLibs), CollisionPolicy.FAIL).merge();
 				merged.writeTo(S.dexClasses);
 			}
 
@@ -218,7 +230,6 @@ public class MakeApkTask extends ProgressStatusTask {
 
 	private class SignProgress implements kellinwood.security.zipsigner.ProgressListener {
 
-		@Override
 		public void onProgress(ProgressEvent arg0) {
 			// TODO Auto-generated method stub
 		}
