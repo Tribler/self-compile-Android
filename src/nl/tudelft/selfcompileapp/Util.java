@@ -24,7 +24,7 @@ public class Util {
 	/**
 	 * @source http://stackoverflow.com/a/304350
 	 */
-	public static byte[] hash(String alg, InputStream in) throws NoSuchAlgorithmException, IOException {
+	private static byte[] hash(String alg, InputStream in) throws NoSuchAlgorithmException, IOException {
 		MessageDigest md = MessageDigest.getInstance(alg);
 		DigestInputStream dis = new DigestInputStream(new BufferedInputStream(in), md);
 		try {
@@ -39,6 +39,18 @@ public class Util {
 		} finally {
 			in.close();
 		}
+	}
+
+	/**
+	 * @source http://stackoverflow.com/a/304275
+	 */
+	public static String getMD5Checksum(File file) throws Exception {
+		byte[] b = hash("MD5", new FileInputStream(file));
+		String result = "";
+		for (int i = 0; i < b.length; i++) {
+			result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+		}
+		return result;
 	}
 
 	/**

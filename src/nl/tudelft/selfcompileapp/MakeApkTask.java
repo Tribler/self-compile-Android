@@ -1,7 +1,6 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -28,15 +27,6 @@ public class MakeApkTask extends ProgressStatusTask {
 		try {
 			if (setMsg("PROCESS INTERFACES")) // TODO make aidl.so
 				return null;
-
-			if (setMsg("COMPRESSING RESOURCES"))
-				return null;
-			Util.zip(S.dirSrc, S.zipSrc);
-			Util.zip(S.dirRes, S.zipRes);
-			Util.zip(S.dirLibs, S.zipLibs);
-			Util.zip(S.dirDexedLibs, S.zipDexedLibs);
-
-			Util.copy(new FileInputStream(S.xmlMan), new File(S.dirAssets + S.xmlMan.getName()));
 
 			// DELETE UNSUPPORTED RESOURCES // TODO update aapt.so
 			Util.deleteRecursive(new File(S.dirRes, "drawable-xxhdpi"));
@@ -85,10 +75,11 @@ public class MakeApkTask extends ProgressStatusTask {
 				}
 
 				// compare hash of jar contents to name of dexed version
-				String md5 = new String(Util.hash("MD5", new FileInputStream(jarLib)));
+				String md5 = Util.getMD5Checksum(jarLib);
 
 				// check if jar is pre-dexed
-				File dexLib = new File(S.dirDexedLibs, jarLib.getName().replace(".jar", md5 + ".jar"));
+				File dexLib = new File(S.dirDexedLibs, jarLib.getName().replace(".jar", "-" + md5 + ".jar"));
+				System.out.println(dexLib.getName());
 				if (!dexLib.exists()) {
 					com.android.dx.command.dexer.Main
 							.main(new String[] { "--verbose", "--output=" + dexLib.getPath(), jarLib.getPath() });
@@ -131,6 +122,22 @@ public class MakeApkTask extends ProgressStatusTask {
 				apkbuilder.addResourcesFromJar(jarLib);
 			}
 
+			if (setMsg("COMPRESSING RESOURCES"))
+				return null;
+			Util.zip(S.dirSrc, S.zipSrc);
+			Util.zip(S.dirRes, S.zipRes);
+			Util.zip(S.dirLibs, S.zipLibs);
+			Util.zip(S.dirDexedLibs, S.zipDexedLibs);
+
+			if (setMsg("PACKAGE RESOURCES"))
+				return null;
+			String strAssets = S.dirAssets.getName() + File.separator;
+			apkbuilder.addFile(S.xmlMan, strAssets + S.xmlMan.getName());
+			apkbuilder.addFile(S.zipSrc, strAssets + S.zipSrc.getName());
+			apkbuilder.addFile(S.zipRes, strAssets + S.zipRes.getName());
+			apkbuilder.addFile(S.zipLibs, strAssets + S.zipLibs.getName());
+			apkbuilder.addFile(S.zipDexedLibs, strAssets + S.zipDexedLibs.getName());
+
 			apkbuilder.setDebugMode(true);
 			apkbuilder.sealApk();
 
@@ -170,22 +177,13 @@ public class MakeApkTask extends ProgressStatusTask {
 			Intent intent = new Intent(Intent.ACTION_VIEW);
 			intent.setDataAndType(uriApk, "application/vnd.android.package-archive");
 			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-			return intent;
+			app.startActivity(intent);
 
 		} catch (Exception e) {
 
 			e.printStackTrace();
 		}
 		return null;
-	}
-
-	@Override
-	protected void onPostExecute(Object result) {
-		super.onPostExecute(result);
-		if (result instanceof Intent) {
-			app.startActivity((Intent) result);
-		}
 	}
 
 	private class CompileProgress extends org.eclipse.jdt.core.compiler.CompilationProgress {
