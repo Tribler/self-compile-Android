@@ -4,14 +4,13 @@
     <string name="app_name">SelfCompileApp</string>
     <string name="platform">android-18</string>
     <string name="keystore">Embedded.jks</string>
-    <string name="btnClean">Clean build</string>
-    <string name="btnAidl">Convert aidl</string>
-    <string name="btnAapt">Pack assets</string>
-    <string name="btnCompile">Compile java</string>
-    <string name="btnDex">Dex classes</string>
-    <string name="btnApk">Build apk</string>
-    <string name="btnSign">Sign apk</string>
-    <string name="btnAlign">Align apk</string>
-    <string name="btnInstall">Install apk</string>
+    <string name="keystorePw">android</string>
+    <string name="certAlias">androiddebugkey</string>
+    <string name="certPw">android</string>
+    <string name="signatureAlgorithm">SHA1withRSA</string>
+    <string name="btnCloneApp">Clone another app</string>
+    <string name="btnReset">Reset</string>
+    <string name="btnCancel">Cancel</string>
+    <string name="btnInstall">Install</string>
 
 </resources>

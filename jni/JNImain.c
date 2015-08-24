@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <android/log.h>
 
-#define DEBUG_TAG "JNImain"
-
 jint Java_nl_tudelft_selfcompileapp_Aapt_JNImain(JNIEnv * env, jobject this,
 		jstring args) {
 
@@ -14,7 +12,7 @@ jint Java_nl_tudelft_selfcompileapp_Aapt_JNImain(JNIEnv * env, jobject this,
 	int i, idx, argc = 1, len;
 	jint rc = 99;
 
-	__android_log_print(ANDROID_LOG_DEBUG, DEBUG_TAG,
+	__android_log_print(ANDROID_LOG_DEBUG, "JNImain",
 			"Native method call: JNImain (%s)", szArgs);
 	len = strlen(szArgs);
 	for (i = 0; i < len; i++)

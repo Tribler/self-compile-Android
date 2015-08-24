@@ -2,14 +2,15 @@ package nl.tudelft.selfcompileapp;
 
 import java.io.*;
 
-import android.os.Environment;
-
+/**
+ * @author Tom Arn (www.t-arn.com)
+ */
 class G {
 
 	static {
-		stWorkDir = Environment.getExternalStorageDirectory().getPath()
-				+ "/.JNImain/";
+		stWorkDir = android.os.Environment.getExternalStorageDirectory().getPath() + "/.JNImain/";
 	}
+
 	public static String stWorkDir;
 
 	// ===================================================================
@@ -102,24 +103,22 @@ public class Aapt
 		String st = "";
 
 		try {
-			lnr = new LineNumberReader(new FileReader(G.stWorkDir
-					+ "native_stdout.txt"));
+			lnr = new LineNumberReader(new FileReader(G.stWorkDir + "native_stdout.txt"));
 			st = "";
 			while (st != null) {
 				st = lnr.readLine();
 				if (st != null)
 					System.out.println(st);
-			}// while
+			} // while
 			lnr.close();
 
-			lnr = new LineNumberReader(new FileReader(G.stWorkDir
-					+ "native_stderr.txt"));
+			lnr = new LineNumberReader(new FileReader(G.stWorkDir + "native_stderr.txt"));
 			st = "";
 			while (st != null) {
 				st = lnr.readLine();
 				if (st != null)
 					System.err.println(st);
-			}// while
+			} // while
 			lnr.close();
 		} catch (Exception e) {
 			System.err.println(e.getMessage());

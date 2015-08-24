@@ -10,6 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.zip.ZipEntry;
@@ -18,13 +21,24 @@ import java.util.zip.ZipOutputStream;
 
 public class Util {
 
-	public static void listRecursive(File path) {
-		if (path.isDirectory()) {
-			for (File child : path.listFiles()) {
-				listRecursive(child);
+	/**
+	 * @source http://stackoverflow.com/a/304350
+	 */
+	public static byte[] hash(String alg, InputStream in) throws NoSuchAlgorithmException, IOException {
+		MessageDigest md = MessageDigest.getInstance(alg);
+		DigestInputStream dis = new DigestInputStream(new BufferedInputStream(in), md);
+		try {
+			byte[] buffer = new byte[1024];
+			while (true) {
+				int readCount = dis.read(buffer);
+				if (readCount < 0) {
+					break;
+				}
 			}
+			return md.digest();
+		} finally {
+			in.close();
 		}
-		System.out.println(path.getAbsolutePath());
 	}
 
 	/**
@@ -64,10 +78,10 @@ public class Util {
 				} finally {
 					out.close();
 				}
-				/*
-				 * if time should be restored as well long time = ze.getTime();
-				 * if (time > 0) file.setLastModified(time);
-				 */
+				long time = ze.getTime();
+				if (time > 0) {
+					file.setLastModified(time);
+				}
 			}
 		} finally {
 			in.close();
@@ -103,7 +117,7 @@ public class Util {
 		}
 	}
 
-	public static void copy(InputStream in, OutputStream out) throws IOException {
+	private static void copy(InputStream in, OutputStream out) throws IOException {
 		byte[] buffer = new byte[1024];
 		while (true) {
 			int readCount = in.read(buffer);
