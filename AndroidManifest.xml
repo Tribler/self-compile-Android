@@ -21,7 +21,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MorphActivity"
+            android:name=".SelfCompileActivity"
             android:label="@string/appName" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -31,7 +31,7 @@
         </activity>
 
         <service
-            android:name=".SingleTaskService"
+            android:name=".SelfCompileService"
             android:exported="false" />
     </application>
 

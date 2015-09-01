@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:columnCount="3"
     android:rowCount="11"
-    tools:context=".MorphActivity" >
+    tools:context=".SelfCompileActivity" >
 
     <ImageButton
         android:id="@+id/btnAppIcon"

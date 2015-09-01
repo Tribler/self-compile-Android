@@ -10,29 +10,50 @@ import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
 import com.android.sdklib.build.ApkBuilder;
 
+import android.app.Activity;
+import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
+import android.os.ResultReceiver;
 import kellinwood.security.zipsigner.ProgressEvent;
 import kellinwood.security.zipsigner.ZipSigner;
 
-public class MakeApkTask extends ProgressStatusTask {
+public class SelfCompileService extends IntentService {
 
-	public MakeApkTask(Context app) {
-		super(app, 14);
+	private Context appContext;
+
+	public SelfCompileService() {
+		super(SelfCompileService.class.toString());
 	}
 
 	@Override
-	protected Intent doInBackground(Object... params) {
+	public void onCreate() {
+		super.onCreate();
+		appContext = getApplicationContext();
+	}
+
+	private void sendMsg(ResultReceiver receiver, String status) {
+		int resultCode = Activity.RESULT_FIRST_USER;
+		Bundle response = new Bundle();
+		response.putString("statusMsg", "CLEAN PROJECT FOLDER");
+		receiver.send(resultCode, response);
+	}
+
+	@Override
+	protected void onHandleIntent(Intent intent) {
+		System.err.println("START"); // DEBUG
+
+		ResultReceiver receiver = intent.getParcelableExtra("receiver");
 		try {
-			if (setMsg("PROCESS INTERFACES")) // TODO make aidl.so
-				return null;
+			sendMsg(receiver, "PROCESS INTERFACES"); // TODO make aidl.so
 
 			// DELETE UNSUPPORTED RESOURCES // TODO update aapt.so
 			Util.deleteRecursive(new File(S.dirRes, "drawable-xxhdpi"));
 
-			if (setMsg("PROCESS RESOURCES"))
-				return null;
+			sendMsg(receiver, "PROCESS RESOURCES");
+
 			Aapt aapt = new Aapt();
 			int exitCode = aapt.fnExecute("aapt p -f -v -M " + S.xmlMan.getPath() + " -F " + S.ap_Resources.getPath()
 					+ " -I " + S.jarAndroid.getPath() + " -A " + S.dirAssets.getPath() + " -S " + S.dirRes.getPath()
@@ -57,16 +78,16 @@ public class MakeApkTask extends ProgressStatusTask {
 			 * jarAndroid.getPath() + " -F " + ap_Resources.getPath());
 			 */
 
-			if (setMsg("COMPILE SOURCE"))
-				return null;
+			sendMsg(receiver, "COMPILE SOURCE");
+
 			org.eclipse.jdt.core.compiler.batch.BatchCompiler.compile(
 					new String[] { "-1.5", "-showversion", "-verbose", "-deprecation", "-bootclasspath",
 							S.getJavaBootClassPath(), "-cp", S.getJavaClassPath(), "-d", S.dirClasses.getPath(),
 							S.dirGen.getPath(), S.dirSrc.getPath() },
 					new java.io.PrintWriter(System.out), new java.io.PrintWriter(System.err), new CompileProgress());
 
-			if (setMsg("PROCESS DEPENDENCIES"))
-				return null;
+			sendMsg(receiver, "PROCESS DEPENDENCIES");
+
 			for (File jarLib : S.dirLibs.listFiles()) {
 
 				// skip native libs in sub directories
@@ -86,8 +107,8 @@ public class MakeApkTask extends ProgressStatusTask {
 				}
 			}
 
-			if (setMsg("INTEGRATE DEPENDENCIES"))
-				return null;
+			sendMsg(receiver, "INTEGRATE DEPENDENCIES");
+
 			// dex project classes
 			com.android.dx.command.dexer.Main
 					.main(new String[] { "--verbose", "--output=" + S.dexClasses.getPath(), S.dirClasses.getPath() });
@@ -98,8 +119,8 @@ public class MakeApkTask extends ProgressStatusTask {
 				merged.writeTo(S.dexClasses);
 			}
 
-			if (setMsg("PACKAGE APP"))
-				return null;
+			sendMsg(receiver, "PACKAGE APP");
+
 			// Do NOT use embedded JarSigner
 			PrivateKey privateKey = null;
 			X509Certificate x509Cert = null;
@@ -107,12 +128,12 @@ public class MakeApkTask extends ProgressStatusTask {
 			ApkBuilder apkbuilder = new ApkBuilder(S.apkUnsigned, S.ap_Resources, S.dexClasses, privateKey, x509Cert,
 					System.out);
 
-			if (setMsg("PACKAGE DEPENDENCIES"))
-				return null;
+			sendMsg(receiver, "PACKAGE DEPENDENCIES");
+
 			apkbuilder.addNativeLibraries(S.dirLibs);
 
-			if (setMsg("PACKAGE RESOURCES"))
-				return null;
+			sendMsg(receiver, "PACKAGE RESOURCES");
+
 			for (File jarLib : S.dirLibs.listFiles()) {
 
 				// skip native libs in sub directories
@@ -122,15 +143,15 @@ public class MakeApkTask extends ProgressStatusTask {
 				apkbuilder.addResourcesFromJar(jarLib);
 			}
 
-			if (setMsg("COMPRESSING RESOURCES"))
-				return null;
+			sendMsg(receiver, "COMPRESSING RESOURCES");
+
 			Util.zip(S.dirSrc, S.zipSrc);
 			Util.zip(S.dirRes, S.zipRes);
 			Util.zip(S.dirLibs, S.zipLibs);
 			Util.zip(S.dirDexedLibs, S.zipDexedLibs);
 
-			if (setMsg("PACKAGE RESOURCES"))
-				return null;
+			sendMsg(receiver, "PACKAGE RESOURCES");
+
 			String strAssets = S.dirAssets.getName() + File.separator;
 			apkbuilder.addFile(S.xmlMan, strAssets + S.xmlMan.getName());
 			apkbuilder.addFile(S.zipSrc, strAssets + S.zipSrc.getName());
@@ -141,30 +162,28 @@ public class MakeApkTask extends ProgressStatusTask {
 			apkbuilder.setDebugMode(true);
 			apkbuilder.sealApk();
 
-			if (setMsg("PLACE SIGNATURE"))
-				return null;
+			sendMsg(receiver, "PLACE SIGNATURE");
 
-			if (!app.getString(R.string.keystore).contentEquals(S.jksEmbedded.getName())) {
+			if (!appContext.getString(R.string.keystore).contentEquals(S.jksEmbedded.getName())) {
 				// TODO use user defined certificate
 			}
 			// use embedded private key
 			String keystorePath = S.jksEmbedded.getPath();
-			char[] keystorePw = app.getString(R.string.keystorePw).toCharArray();
-			String certAlias = app.getString(R.string.certAlias);
-			char[] certPw = app.getString(R.string.certPw).toCharArray();
-			String signatureAlgorithm = app.getString(R.string.signatureAlgorithm);
+			char[] keystorePw = appContext.getString(R.string.keystorePw).toCharArray();
+			String certAlias = appContext.getString(R.string.certAlias);
+			char[] certPw = appContext.getString(R.string.certPw).toCharArray();
+			String signatureAlgorithm = appContext.getString(R.string.signatureAlgorithm);
 
 			ZipSigner zipsigner = new ZipSigner();
 			zipsigner.addProgressListener(new SignProgress());
 			kellinwood.security.zipsigner.optional.CustomKeySigner.signZip(zipsigner, keystorePath, keystorePw,
 					certAlias, certPw, signatureAlgorithm, S.apkUnsigned.getPath(), S.apkUnaligned.getPath());
 
-			if (setMsg("OPTIMIZE APP")) // TODO make zipalign.so
-				return null;
+			sendMsg(receiver, "OPTIMIZE APP"); // TODO make zipalign.so
 
-			if (setMsg("PREPARE INSTALLATION"))
-				return null;
-			String strAppName = app.getString(R.string.appName);
+			sendMsg(receiver, "PREPARE INSTALLATION");
+
+			String strAppName = appContext.getString(R.string.appName);
 			File apkCopy = new File(S.dirRoot, strAppName + ".apk");
 			if (apkCopy.exists()) {
 				apkCopy.delete();
@@ -172,18 +191,18 @@ public class MakeApkTask extends ProgressStatusTask {
 			Util.copy(S.apkUnaligned, new FileOutputStream(apkCopy));
 			Uri uriApk = Uri.fromFile(apkCopy);
 
-			if (setMsg("LAUNCH INSTALLATION"))
-				return null;
-			Intent intent = new Intent(Intent.ACTION_VIEW);
-			intent.setDataAndType(uriApk, "application/vnd.android.package-archive");
-			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			app.startActivity(intent);
+			sendMsg(receiver, "LAUNCH INSTALLATION");
+
+			Intent i = new Intent(Intent.ACTION_VIEW);
+			i.setDataAndType(uriApk, "application/vnd.android.package-archive");
+			i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			appContext.startActivity(i);
 
 		} catch (Exception e) {
-
 			e.printStackTrace();
+			receiver.send(Activity.RESULT_CANCELED, Bundle.EMPTY);
 		}
-		return null;
+
 	}
 
 	private class CompileProgress extends org.eclipse.jdt.core.compiler.CompilationProgress {
