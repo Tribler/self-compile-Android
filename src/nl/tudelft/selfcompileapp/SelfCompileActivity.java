@@ -10,8 +10,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask.Status;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -24,7 +22,11 @@ import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-public class SelfCompileActivity extends Activity implements Handler.Callback {
+public class SelfCompileActivity extends Activity {
+
+	static final int ACTION_PICK_IMAGE = 1;
+	static final int ICON_WIDTH = 150;
+	static final int ICON_HEIGHT = 150;
 
 	UserInputFragment userInput;
 	TaskManagerFragment taskManager;
@@ -37,10 +39,6 @@ public class SelfCompileActivity extends Activity implements Handler.Callback {
 	Button btnReset;
 	Button btnCancel;
 	Button btnInstall;
-
-	static final int SELECT_PHOTO = 1;
-	static final int ICON_WIDTH = 150;
-	static final int ICON_HEIGHT = 150;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -60,29 +58,29 @@ public class SelfCompileActivity extends Activity implements Handler.Callback {
 		initProgressListener();
 
 		if (!S.dirProj.exists()) {
-			taskManager.startClean();
+			taskManager.startClean(this);
 		}
 	}
 
 	public void btnReset(View btnReset) {
 		btnReset.setEnabled(false);
-		taskManager.startClean();
+		taskManager.startClean(this);
 	}
 
 	public void btnCancel(View btnCancel) {
 		btnCancel.setEnabled(false);
-		taskManager.cancelTask();
+		taskManager.cancelTask(this);
 	}
 
 	public void btnInstall(View btnInstall) {
 		btnInstall.setEnabled(false);
-		taskManager.startBuild();
+		taskManager.startBuild(this);
 	}
 
 	public void btnBrowseIcon(View btnBrowseIcon) {
 		Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
 		photoPickerIntent.setType("image/*");
-		startActivityForResult(photoPickerIntent, SELECT_PHOTO);
+		startActivityForResult(photoPickerIntent, ACTION_PICK_IMAGE);
 	}
 
 	@Override
@@ -91,7 +89,7 @@ public class SelfCompileActivity extends Activity implements Handler.Callback {
 
 		switch (requestCode) {
 
-		case SELECT_PHOTO:
+		case ACTION_PICK_IMAGE:
 			if (resultCode == RESULT_OK) {
 				try {
 					Uri uriImg = returnedIntent.getData();
@@ -176,27 +174,6 @@ public class SelfCompileActivity extends Activity implements Handler.Callback {
 
 		// Set current working state
 		toggleGui(taskManager.isIdle());
-		lblStatus.setText(taskManager.strStatus);
-		prbProgress.setProgress(taskManager.intProgress);
-
-		// Handle state changes
-		taskManager.handler = new Handler(this);
-	}
-
-	public boolean handleMessage(Message msg) {
-		switch (msg.what) {
-
-		case RESULT_OK:
-		case RESULT_CANCELED:
-			toggleGui(true);
-			return true;
-
-		case RESULT_FIRST_USER:
-		default:
-			lblStatus.setText(taskManager.strStatus);
-			prbProgress.setProgress(taskManager.intProgress);
-			return true;
-		}
 	}
 
 	protected void toggleGui(boolean enabled) {
@@ -204,63 +181,97 @@ public class SelfCompileActivity extends Activity implements Handler.Callback {
 		txtAppName.setEnabled(enabled);
 		btnCloneApp.setEnabled(enabled);
 		lblStatus.setVisibility(enabled ? View.INVISIBLE : View.VISIBLE);
+		lblStatus.setText(taskManager.strStatus);
 		prbProgress.setVisibility(enabled ? View.INVISIBLE : View.VISIBLE);
+		prbProgress.setProgress(taskManager.intProgress);
 		btnReset.setEnabled(enabled);
 		btnCancel.setEnabled(!enabled);
 		btnInstall.setEnabled(enabled);
 	}
 
-	class UserInputFragment extends Fragment {
+}
 
-		protected Bitmap appIcon;
-		protected String appName;
+class UserInputFragment extends Fragment {
 
-		@Override
-		public void onCreate(Bundle savedInstanceState) {
-			super.onCreate(savedInstanceState);
-			setRetainInstance(true);
+	protected Bitmap appIcon;
+	protected String appName;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setRetainInstance(true);
+	}
+}
+
+class TaskManagerFragment extends Fragment implements Handler.Callback {
+
+	static final int TASK_CANCELED = 0;
+	static final int TASK_FINISHED = -1;
+	static final int TASK_PROGRESS = 1;
+
+	protected int intProgress;
+	protected String strStatus;
+
+	protected Handler handler = new Handler(this);
+	private Thread runningTask;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setRetainInstance(true);
+	}
+
+	boolean isIdle() {
+		return runningTask == null || !runningTask.isAlive();
+	}
+
+	public boolean handleMessage(Message msg) {
+		// update state
+		switch (msg.what) {
+
+		case TASK_FINISHED:
+		case TASK_CANCELED:
+			runningTask = null;
+			intProgress = 0;
+			strStatus = "";
+			break;
+
+		case TASK_PROGRESS:
+		default:
+			intProgress = msg.arg1;
+			if (msg.arg2 != 0) {
+				strStatus = getString(msg.arg2);
+			}
+			break;
+		}
+
+		// update gui
+		if (isAdded()) {
+			((SelfCompileActivity) getActivity()).toggleGui(isIdle());
+		}
+		return true;
+	}
+
+	void startClean(SelfCompileActivity activity) {
+		if (isIdle()) {
+			activity.toggleGui(false);
+			runningTask = new Thread(new CleanTask(activity.getApplicationContext(), handler));
+			runningTask.start();
 		}
 	}
 
-	class TaskManagerFragment extends Fragment {
-
-		protected String strStatus;
-		protected int intProgress;
-
-		protected Handler handler;
-
-		private AsyncTask<Object, Object, Object> runningTask;
-
-		@Override
-		public void onCreate(Bundle savedInstanceState) {
-			super.onCreate(savedInstanceState);
-			setRetainInstance(true);
+	void cancelTask(SelfCompileActivity activity) {
+		if (!isIdle()) {
+			runningTask.interrupt();
 		}
+	}
 
-		boolean isIdle() {
-			return runningTask == null || runningTask.getStatus() == Status.FINISHED;
+	void startBuild(SelfCompileActivity activity) {
+		if (isIdle()) {
+			activity.toggleGui(false);
+			runningTask = new Thread(new BuildTask(activity.getApplicationContext(), handler));
+			runningTask.start();
 		}
-
-		void startClean(Object... params) {
-			if (isIdle()) {
-				toggleGui(false);
-				runningTask = new CleanTask(this).execute(params);
-			}
-		}
-
-		void cancelTask() {
-			if (!isIdle()) {
-				runningTask.cancel(true);
-			}
-		}
-
-		void startBuild(Object... params) {
-			if (isIdle()) {
-				toggleGui(false);
-				runningTask = new BuildTask(this).execute(params);
-			}
-		}
-
 	}
 
 }

@@ -12,5 +12,20 @@
     <string name="btnReset">Reset</string>
     <string name="btnCancel">Cancel</string>
     <string name="btnInstall">Install</string>
+    <string name="stsClean">REMOVE OLD FILES</string>
+    <string name="stsUnpackSrc">UNPACK SOURCE CODE</string>
+    <string name="stsUnpackDep">UNPACK DEPENDENCIES</string>
+    <string name="runAidl">PROCESS INTERFACES</string>
+    <string name="runAapt">PROCESS RESOURCES</string>
+    <string name="compileJava">COMPILE SOURCE</string>
+    <string name="dexLibs">PROCESS DEPENDENCIES</string>
+    <string name="dexClasses">INTEGRATE DEPENDENCIES</string>
+    <string name="buildApk">PACKAGE APP</string>
+    <string name="addLibs">PACKAGE DEPENDENCIES</string>
+    <string name="zipAssets">COMPRESSING RESOURCES</string>
+    <string name="addAssets">PACKAGE RESOURCES</string>
+    <string name="zipSign">PLACE SIGNATURE</string>
+    <string name="zipAlign">OPTIMIZE APP</string>
+    <string name="publishApk">PREPARE INSTALLATION</string>
 
 </resources>
