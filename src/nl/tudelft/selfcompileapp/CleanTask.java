@@ -4,66 +4,111 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import android.app.ProgressDialog;
+import android.app.Activity;
+import android.content.Context;
+import android.content.res.AssetManager;
+import android.os.AsyncTask;
 import nl.tudelft.selfcompileapp.SelfCompileActivity.TaskManagerFragment;
 
-public class CleanTask extends ProgressTask {
+public class CleanTask extends AsyncTask<Object, Object, Object> {
 
-	public CleanTask(TaskManagerFragment mgr, Runnable done) {
-		super(mgr, done);
-		dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-		dialog.setMax(100);
-		dialog.setTitle("Resetting...");
-		dialog.setMessage("");
+	TaskManagerFragment mgr;
+	Context context;
+	AssetManager asset;
+
+	public CleanTask(TaskManagerFragment mgr) {
+		this.mgr = mgr;
+		this.context = mgr.getActivity();
+		this.asset = context.getAssets();
+	}
+
+	@Override
+	protected void onProgressUpdate(Object... values) {
+		if (values.length > 0) {
+			mgr.intProgress = (Integer) values[0];
+		}
+		if (values.length > 1) {
+			mgr.strStatus = (String) values[1];
+		}
+		mgr.handler.sendEmptyMessage(Activity.RESULT_FIRST_USER);
+	}
+
+	@Override
+	protected void onPreExecute() {
+		publishProgress(0, "");
+	}
+
+	@Override
+	protected void onPostExecute(Object result) {
+		mgr.handler.sendEmptyMessage(Activity.RESULT_OK);
+	}
+
+	@Override
+	protected void onCancelled() {
+		mgr.handler.sendEmptyMessage(Activity.RESULT_CANCELED);
+	}
+
+	boolean setProgress(Object... values) {
+		publishProgress(values);
+		return isCancelled();
 	}
 
 	@Override
 	protected Object doInBackground(Object... params) {
 
-		if (isCancelled())
+		if (setProgress(1, "REMOVE OLD FILES")) {
 			return null;
-
-		publishProgress(0, "Remove old files");
-
+		}
 		Util.deleteRecursive(S.dirProj);
 
-		publishProgress(10, "Unpack source code");
-
+		if (setProgress(10, "UNPACK SOURCE CODE")) {
+			return null;
+		}
 		S.mkDirs();
 
-		publishProgress(15);
-
+		if (setProgress(15)) {
+			return null;
+		}
 		unzipAsset(S.zipSrc, S.dirSrc);
 
-		publishProgress(25);
-
+		if (setProgress(25)) {
+			return null;
+		}
 		copyAsset(S.xmlMan, S.xmlMan);
 
-		publishProgress(30);
-
+		if (setProgress(30)) {
+			return null;
+		}
 		copyAsset(S.jksEmbedded, S.jksEmbedded);
 
-		publishProgress(35);
-
+		if (setProgress(35)) {
+			return null;
+		}
 		unzipAsset(S.zipRes, S.dirRes);
 
-		publishProgress(40);
-
+		if (setProgress(40)) {
+			return null;
+		}
 		copyAsset(S.pngAppIcon, S.pngAppIcon);
 
-		publishProgress(45, "Unpack dependencies");
-
+		if (setProgress(45, "UNPACK DEPENDENCIES")) {
+			return null;
+		}
 		unzipAsset(S.zipLibs, S.dirLibs);
 
-		publishProgress(60);
-
+		if (setProgress(60)) {
+			return null;
+		}
 		unzipAsset(S.zipDexedLibs, S.dirDexedLibs);
 
-		publishProgress(75);
-
+		if (setProgress(75)) {
+			return null;
+		}
 		copyAsset(S.jarAndroid, S.jarAndroid);
 
-		publishProgress(100);
+		if (setProgress(100)) {
+			return null;
+		}
 
 		return null;
 	}

@@ -10,34 +10,74 @@ import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
 import com.android.sdklib.build.ApkBuilder;
 
-import android.app.ProgressDialog;
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import kellinwood.security.zipsigner.ProgressEvent;
 import kellinwood.security.zipsigner.ZipSigner;
 import nl.tudelft.selfcompileapp.SelfCompileActivity.TaskManagerFragment;
 
-public class BuildTask extends ProgressTask {
+public class BuildTask extends AsyncTask<Object, Object, Object> {
 
-	public BuildTask(TaskManagerFragment mgr, Runnable done) {
-		super(mgr, done);
-		dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-		dialog.setMax(100);
-		dialog.setTitle("Working...");
-		dialog.setMessage("");
+	TaskManagerFragment mgr;
+	Context context;
+	AssetManager asset;
+
+	public BuildTask(TaskManagerFragment mgr) {
+		this.mgr = mgr;
+		this.context = mgr.getActivity();
+		this.asset = context.getAssets();
+	}
+
+	@Override
+	protected void onProgressUpdate(Object... values) {
+		if (values.length > 0) {
+			mgr.intProgress = (Integer) values[0];
+		}
+		if (values.length > 1) {
+			mgr.strStatus = (String) values[1];
+		}
+		mgr.handler.sendEmptyMessage(Activity.RESULT_FIRST_USER);
+	}
+
+	@Override
+	protected void onPreExecute() {
+		publishProgress(0, "");
+	}
+
+	@Override
+	protected void onPostExecute(Object result) {
+		mgr.handler.sendEmptyMessage(Activity.RESULT_OK);
+	}
+
+	@Override
+	protected void onCancelled() {
+		mgr.handler.sendEmptyMessage(Activity.RESULT_CANCELED);
+	}
+
+	boolean setProgress(Object... values) {
+		publishProgress(values);
+		return isCancelled();
 	}
 
 	@Override
 	protected Object doInBackground(Object... params) {
 
 		try {
-			publishProgress(0, "PROCESS INTERFACES"); // TODO make aidl.so
+			if (setProgress(1, "PROCESS INTERFACES")) {
+				return null;
+			}
+			// TODO make aidl.so
 
 			// DELETE UNSUPPORTED RESOURCES // TODO update aapt.so
 			Util.deleteRecursive(new File(S.dirRes, "drawable-xxhdpi"));
 
-			publishProgress(5, "PROCESS RESOURCES");
-
+			if (setProgress(5, "PROCESS RESOURCES")) {
+				return null;
+			}
 			Aapt aapt = new Aapt();
 			int exitCode = aapt.fnExecute("aapt p -f -v -M " + S.xmlMan.getPath() + " -F " + S.ap_Resources.getPath()
 					+ " -I " + S.jarAndroid.getPath() + " -A " + S.dirAssets.getPath() + " -S " + S.dirRes.getPath()
@@ -62,16 +102,18 @@ public class BuildTask extends ProgressTask {
 			 * jarAndroid.getPath() + " -F " + ap_Resources.getPath());
 			 */
 
-			publishProgress(15, "COMPILE SOURCE");
-
+			if (setProgress(15, "COMPILE SOURCE")) {
+				return null;
+			}
 			org.eclipse.jdt.core.compiler.batch.BatchCompiler.compile(
 					new String[] { "-1.5", "-showversion", "-verbose", "-deprecation", "-bootclasspath",
 							S.getJavaBootClassPath(), "-cp", S.getJavaClassPath(), "-d", S.dirClasses.getPath(),
 							S.dirGen.getPath(), S.dirSrc.getPath() },
 					new java.io.PrintWriter(System.out), new java.io.PrintWriter(System.err), new CompileProgress());
 
-			publishProgress(25, "PROCESS DEPENDENCIES");
-
+			if (setProgress(25, "PROCESS DEPENDENCIES")) {
+				return null;
+			}
 			for (File jarLib : S.dirLibs.listFiles()) {
 
 				// skip native libs in sub directories
@@ -91,8 +133,9 @@ public class BuildTask extends ProgressTask {
 				}
 			}
 
-			publishProgress(40, "INTEGRATE DEPENDENCIES");
-
+			if (setProgress(40, "INTEGRATE DEPENDENCIES")) {
+				return null;
+			}
 			// dex project classes
 			com.android.dx.command.dexer.Main
 					.main(new String[] { "--verbose", "--output=" + S.dexClasses.getPath(), S.dirClasses.getPath() });
@@ -103,8 +146,9 @@ public class BuildTask extends ProgressTask {
 				merged.writeTo(S.dexClasses);
 			}
 
-			publishProgress(55, "PACKAGE APP");
-
+			if (setProgress(55, "PACKAGE APP")) {
+				return null;
+			}
 			// Do NOT use embedded JarSigner
 			PrivateKey privateKey = null;
 			X509Certificate x509Cert = null;
@@ -112,12 +156,14 @@ public class BuildTask extends ProgressTask {
 			ApkBuilder apkbuilder = new ApkBuilder(S.apkUnsigned, S.ap_Resources, S.dexClasses, privateKey, x509Cert,
 					System.out);
 
-			publishProgress(60, "PACKAGE DEPENDENCIES");
-
+			if (setProgress(60, "PACKAGE DEPENDENCIES")) {
+				return null;
+			}
 			apkbuilder.addNativeLibraries(S.dirLibs);
 
-			publishProgress(65, "PACKAGE RESOURCES");
-
+			if (setProgress(65, "PACKAGE RESOURCES")) {
+				return null;
+			}
 			for (File jarLib : S.dirLibs.listFiles()) {
 
 				// skip native libs in sub directories
@@ -127,15 +173,17 @@ public class BuildTask extends ProgressTask {
 				apkbuilder.addResourcesFromJar(jarLib);
 			}
 
-			publishProgress(70, "COMPRESSING RESOURCES");
-
+			if (setProgress(70, "COMPRESSING RESOURCES")) {
+				return null;
+			}
 			Util.zip(S.dirSrc, S.zipSrc);
 			Util.zip(S.dirRes, S.zipRes);
 			Util.zip(S.dirLibs, S.zipLibs);
 			Util.zip(S.dirDexedLibs, S.zipDexedLibs);
 
-			publishProgress(75, "PACKAGE RESOURCES");
-
+			if (setProgress(75, "PACKAGE RESOURCES")) {
+				return null;
+			}
 			String strAssets = S.dirAssets.getName() + File.separator;
 			apkbuilder.addFile(S.xmlMan, strAssets + S.xmlMan.getName());
 			apkbuilder.addFile(S.zipSrc, strAssets + S.zipSrc.getName());
@@ -146,8 +194,9 @@ public class BuildTask extends ProgressTask {
 			apkbuilder.setDebugMode(true);
 			apkbuilder.sealApk();
 
-			publishProgress(80, "PLACE SIGNATURE");
-
+			if (setProgress(80, "PLACE SIGNATURE")) {
+				return null;
+			}
 			if (!context.getString(R.string.keystore).contentEquals(S.jksEmbedded.getName())) {
 				// TODO use user defined certificate
 			}
@@ -163,10 +212,14 @@ public class BuildTask extends ProgressTask {
 			kellinwood.security.zipsigner.optional.CustomKeySigner.signZip(zipsigner, keystorePath, keystorePw,
 					certAlias, certPw, signatureAlgorithm, S.apkUnsigned.getPath(), S.apkUnaligned.getPath());
 
-			publishProgress(85, "OPTIMIZE APP"); // TODO make zipalign.so
+			if (setProgress(85, "OPTIMIZE APP")) {
+				return null;
+			}
+			// TODO make zipalign.so
 
-			publishProgress(90, "PREPARE INSTALLATION");
-
+			if (setProgress(90, "PREPARE INSTALLATION")) {
+				return null;
+			}
 			String strAppName = context.getString(R.string.appName);
 			File apkCopy = new File(S.dirRoot, strAppName + ".apk");
 			if (apkCopy.exists()) {
@@ -175,8 +228,9 @@ public class BuildTask extends ProgressTask {
 			Util.copy(S.apkUnaligned, new FileOutputStream(apkCopy));
 			Uri uriApk = Uri.fromFile(apkCopy);
 
-			publishProgress(99, "LAUNCH INSTALLATION");
-
+			if (setProgress(99, "LAUNCH INSTALLATION")) {
+				return null;
+			}
 			Intent i = new Intent(Intent.ACTION_VIEW);
 			i.setDataAndType(uriApk, "application/vnd.android.package-archive");
 			i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -191,7 +245,7 @@ public class BuildTask extends ProgressTask {
 	class CompileProgress extends org.eclipse.jdt.core.compiler.CompilationProgress {
 
 		@Override
-		public void begin(int arg0) {
+		public void begin(int remainingWork) {
 
 		}
 
@@ -202,17 +256,16 @@ public class BuildTask extends ProgressTask {
 
 		@Override
 		public boolean isCanceled() {
-			// TODO Auto-generated method stub
 			return false;
 		}
 
 		@Override
-		public void setTaskName(String arg0) {
+		public void setTaskName(String name) {
 
 		}
 
 		@Override
-		public void worked(int arg0, int arg1) {
+		public void worked(int workIncrement, int remainingWork) {
 
 		}
 

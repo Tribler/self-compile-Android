@@ -2,20 +2,19 @@ package nl.tudelft.selfcompileapp;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
-import java.util.List;
 
 import android.app.Activity;
-import android.app.Dialog;
-import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask.Status;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -25,16 +24,18 @@ import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-public class SelfCompileActivity extends Activity {
+public class SelfCompileActivity extends Activity implements Handler.Callback {
 
 	UserInputFragment userInput;
 	TaskManagerFragment taskManager;
 
 	ImageButton btnAppIcon;
 	EditText txtAppName;
+	Button btnCloneApp;
 	TextView lblStatus;
 	ProgressBar prbProgress;
 	Button btnReset;
+	Button btnCancel;
 	Button btnInstall;
 
 	static final int SELECT_PHOTO = 1;
@@ -48,9 +49,11 @@ public class SelfCompileActivity extends Activity {
 
 		btnAppIcon = (ImageButton) findViewById(R.id.btnAppIcon);
 		txtAppName = (EditText) findViewById(R.id.txtAppName);
+		btnCloneApp = (Button) findViewById(R.id.btnCloneApp);
 		lblStatus = (TextView) findViewById(R.id.lblStatus);
 		prbProgress = (ProgressBar) findViewById(R.id.prbProgress);
 		btnReset = (Button) findViewById(R.id.btnReset);
+		btnCancel = (Button) findViewById(R.id.btnCancel);
 		btnInstall = (Button) findViewById(R.id.btnInstall);
 
 		initUserInput();
@@ -62,10 +65,17 @@ public class SelfCompileActivity extends Activity {
 	}
 
 	public void btnReset(View btnReset) {
+		btnReset.setEnabled(false);
 		taskManager.startClean();
 	}
 
+	public void btnCancel(View btnCancel) {
+		btnCancel.setEnabled(false);
+		taskManager.cancelTask();
+	}
+
 	public void btnInstall(View btnInstall) {
+		btnInstall.setEnabled(false);
 		taskManager.startBuild();
 	}
 
@@ -168,13 +178,40 @@ public class SelfCompileActivity extends Activity {
 		}
 
 		// Set current working state
-		blockUserInput(taskManager.isRunning());
+		toggleGui(taskManager.isIdle());
+		lblStatus.setText(taskManager.strStatus);
+		prbProgress.setProgress(taskManager.intProgress);
 
+		// Handle state changes
+		taskManager.handler = new Handler(this);
 	}
 
-	protected void blockUserInput(boolean working) {
-		btnReset.setEnabled(!working);
-		btnInstall.setEnabled(!working);
+	@Override
+	public boolean handleMessage(Message msg) {
+		switch (msg.what) {
+
+		case RESULT_OK:
+		case RESULT_CANCELED:
+			toggleGui(true);
+			return true;
+
+		case RESULT_FIRST_USER:
+		default:
+			lblStatus.setText(taskManager.strStatus);
+			prbProgress.setProgress(taskManager.intProgress);
+			return true;
+		}
+	}
+
+	protected void toggleGui(boolean enabled) {
+		btnAppIcon.setEnabled(enabled);
+		txtAppName.setEnabled(enabled);
+		btnCloneApp.setEnabled(enabled);
+		lblStatus.setVisibility(enabled ? View.INVISIBLE : View.VISIBLE);
+		prbProgress.setVisibility(enabled ? View.INVISIBLE : View.VISIBLE);
+		btnReset.setEnabled(enabled);
+		btnCancel.setEnabled(!enabled);
+		btnInstall.setEnabled(enabled);
 	}
 
 	class UserInputFragment extends Fragment {
@@ -189,16 +226,14 @@ public class SelfCompileActivity extends Activity {
 		}
 	}
 
-	class TaskManagerFragment extends DialogFragment {
+	class TaskManagerFragment extends Fragment {
 
 		protected String strStatus;
 		protected int intProgress;
 
-		ProgressDialog dialog;
+		protected Handler handler;
 
-		private ProgressTask runningTask;
-		private boolean activityReady = true;
-		private List<Runnable> lstPendingCallbacks = new LinkedList<Runnable>();
+		private AsyncTask<Object, Object, Object> runningTask;
 
 		@Override
 		public void onCreate(Bundle savedInstanceState) {
@@ -206,65 +241,27 @@ public class SelfCompileActivity extends Activity {
 			setRetainInstance(true);
 		}
 
-		@Override
-		public Dialog onCreateDialog(Bundle savedInstanceState) {
-			dialog = new ProgressDialog(getActivity());
-			return dialog;
-		}
-
-		@Override
-		public void onActivityCreated(Bundle savedInstanceState) {
-			super.onActivityCreated(savedInstanceState);
-			activityReady = true;
-			int pendingCallbacks = lstPendingCallbacks.size();
-			while (pendingCallbacks-- > 0) {
-				getActivity().runOnUiThread(lstPendingCallbacks.remove(0));
-			}
-		}
-
-		@Override
-		public void onDetach() {
-			super.onDetach();
-			activityReady = false;
-		}
-
-		public void runWhenReady(Runnable runnable) {
-			if (activityReady) {
-				getActivity().runOnUiThread(runnable);
-			} else {
-				lstPendingCallbacks.add(runnable);
-			}
-		}
-
-		boolean isRunning() {
-			return runningTask != null;
+		boolean isIdle() {
+			return runningTask == null || runningTask.getStatus() == Status.FINISHED;
 		}
 
 		void startClean(Object... params) {
-			if (runningTask == null) {
-				blockUserInput(true);
-				runningTask = new CleanTask(this, new Runnable() {
-					@Override
-					public void run() {
-						runningTask = null;
-						blockUserInput(false);
-					}
-				});
-				runningTask.execute(params);
+			if (isIdle()) {
+				toggleGui(false);
+				runningTask = new CleanTask(this).execute(params);
+			}
+		}
+
+		void cancelTask() {
+			if (!isIdle()) {
+				runningTask.cancel(true);
 			}
 		}
 
 		void startBuild(Object... params) {
-			if (runningTask == null) {
-				blockUserInput(true);
-				runningTask = new BuildTask(this, new Runnable() {
-					@Override
-					public void run() {
-						runningTask = null;
-						blockUserInput(false);
-					}
-				});
-				runningTask.execute(params);
+			if (isIdle()) {
+				toggleGui(false);
+				runningTask = new BuildTask(this).execute(params);
 			}
 		}
 
