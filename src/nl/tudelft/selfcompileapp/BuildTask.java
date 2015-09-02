@@ -64,6 +64,8 @@ public class BuildTask extends ProgressTask {
 	}
 
 	private void dexLibs() throws Exception {
+		int percent = 20;
+
 		for (File jarLib : S.dirLibs.listFiles()) {
 
 			// skip native libs in sub directories
@@ -81,6 +83,11 @@ public class BuildTask extends ProgressTask {
 				com.android.dx.command.dexer.Main
 						.main(new String[] { "--verbose", "--output=" + dexLib.getPath(), jarLib.getPath() });
 			}
+
+			percent += 1;
+			if (setProgress(percent)) {
+				return;
+			}
 		}
 	}
 
@@ -90,9 +97,15 @@ public class BuildTask extends ProgressTask {
 	}
 
 	private void dexMerge() throws Exception {
+		int percent = 40;
+
 		for (File dexLib : S.dirDexedLibs.listFiles()) {
 			Dex merged = new DexMerger(new Dex(S.dexClasses), new Dex(dexLib), CollisionPolicy.FAIL).merge();
 			merged.writeTo(S.dexClasses);
+
+			if (setProgress(++percent)) {
+				return;
+			}
 		}
 	}
 
@@ -104,10 +117,12 @@ public class BuildTask extends ProgressTask {
 		ApkBuilder apkbuilder = new ApkBuilder(S.apkUnsigned, S.ap_Resources, S.dexClasses, privateKey, x509Cert,
 				System.out);
 
-		if (setProgress(60, R.string.addLibs)) {
+		if (setProgress(65, R.string.addLibs)) {
 			return;
 		}
 		apkbuilder.addNativeLibraries(S.dirLibs);
+
+		int percent = 65;
 
 		for (File jarLib : S.dirLibs.listFiles()) {
 
@@ -116,9 +131,13 @@ public class BuildTask extends ProgressTask {
 				continue;
 			}
 			apkbuilder.addResourcesFromJar(jarLib);
+
+			if (setProgress(++percent)) {
+				return;
+			}
 		}
 
-		if (setProgress(70, R.string.zipAssets)) {
+		if (setProgress(75, R.string.zipAssets)) {
 			return;
 		}
 		Util.zip(S.dirSrc, S.zipSrc);
@@ -126,7 +145,7 @@ public class BuildTask extends ProgressTask {
 		Util.zip(S.dirLibs, S.zipLibs);
 		Util.zip(S.dirDexedLibs, S.zipDexedLibs);
 
-		if (setProgress(75, R.string.addAssets)) {
+		if (setProgress(80, R.string.addAssets)) {
 			return;
 		}
 		String strAssets = S.dirAssets.getName() + File.separator;
@@ -171,6 +190,10 @@ public class BuildTask extends ProgressTask {
 		}
 		Util.copy(S.apkUnaligned, new FileOutputStream(apkCopy));
 
+		if (setProgress(100)) {
+			return;
+		}
+
 		Intent i = new Intent(Intent.ACTION_VIEW);
 		i.setDataAndType(Uri.fromFile(apkCopy), "application/vnd.android.package-archive");
 		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -195,37 +218,37 @@ public class BuildTask extends ProgressTask {
 			}
 			compileJava();
 
-			if (setProgress(20, R.string.dexClasses)) {
-				return;
-			}
-			dexClasses();
-
-			if (setProgress(25, R.string.dexLibs)) {
+			if (setProgress(20, R.string.dexLibs)) {
 				return;
 			}
 			dexLibs();
+
+			if (setProgress(30, R.string.dexClasses)) {
+				return;
+			}
+			dexClasses();
 
 			if (setProgress(40)) {
 				return;
 			}
 			dexMerge();
 
-			if (setProgress(55, R.string.buildApk)) {
+			if (setProgress(60, R.string.buildApk)) {
 				return;
 			}
 			buildApk();
 
-			if (setProgress(80, R.string.zipSign)) {
+			if (setProgress(85, R.string.zipSign)) {
 				return;
 			}
 			zipSign();
 
-			if (setProgress(85, R.string.zipAlign)) {
+			if (setProgress(90, R.string.zipAlign)) {
 				return;
 			}
 			zipAlign();
 
-			if (setProgress(90, R.string.publishApk)) {
+			if (setProgress(95, R.string.publishApk)) {
 				return;
 			}
 			installApk();
