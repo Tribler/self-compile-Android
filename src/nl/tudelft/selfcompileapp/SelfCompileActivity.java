@@ -2,10 +2,15 @@ package nl.tudelft.selfcompileapp;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedList;
+import java.util.List;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,30 +22,20 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-
-class UserInputFragment extends Fragment {
-
-	protected Bitmap appIcon;
-	protected String appName;
-
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setRetainInstance(true);
-	}
-}
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 public class SelfCompileActivity extends Activity {
 
 	UserInputFragment userInput;
-	ProgressFragment progress;
+	TaskManagerFragment taskManager;
 
-	ImageButton btnAppIcon = (ImageButton) findViewById(R.id.btnAppIcon);
-	EditText txtAppName = (EditText) findViewById(R.id.txtAppName);
-
-	Button btnReset = (Button) findViewById(R.id.btnReset);
-	Button btnCancel = (Button) findViewById(R.id.btnCancel);
-	Button btnInstall = (Button) findViewById(R.id.btnInstall);
+	ImageButton btnAppIcon;
+	EditText txtAppName;
+	TextView lblStatus;
+	ProgressBar prbProgress;
+	Button btnReset;
+	Button btnInstall;
 
 	static final int SELECT_PHOTO = 1;
 	static final int ICON_WIDTH = 150;
@@ -51,17 +46,27 @@ public class SelfCompileActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_morph);
 
+		btnAppIcon = (ImageButton) findViewById(R.id.btnAppIcon);
+		txtAppName = (EditText) findViewById(R.id.txtAppName);
+		lblStatus = (TextView) findViewById(R.id.lblStatus);
+		prbProgress = (ProgressBar) findViewById(R.id.prbProgress);
+		btnReset = (Button) findViewById(R.id.btnReset);
+		btnInstall = (Button) findViewById(R.id.btnInstall);
+
 		initUserInput();
 		initProgressListener();
 
-		boolean working = progress.inProgess();
-		btnReset.setEnabled(!working);
-		btnCancel.setEnabled(working);
-		btnInstall.setEnabled(!working);
-
 		if (!S.dirProj.exists()) {
-			btnReset(btnReset);
+			taskManager.startClean();
 		}
+	}
+
+	public void btnReset(View btnReset) {
+		taskManager.startClean();
+	}
+
+	public void btnInstall(View btnInstall) {
+		taskManager.startBuild();
 	}
 
 	public void btnBrowseIcon(View btnBrowseIcon) {
@@ -101,12 +106,12 @@ public class SelfCompileActivity extends Activity {
 	 */
 	private void initUserInput() {
 		FragmentManager fm = getFragmentManager();
-		userInput = (UserInputFragment) fm.findFragmentByTag("userInput");
+		userInput = (UserInputFragment) fm.findFragmentByTag(UserInputFragment.class.getSimpleName());
 
 		if (userInput == null) {
 			userInput = new UserInputFragment();
 
-			fm.beginTransaction().add(userInput, "userInput").commit();
+			fm.beginTransaction().add(userInput, UserInputFragment.class.getSimpleName()).commit();
 
 			// Default app icon
 			try {
@@ -154,23 +159,114 @@ public class SelfCompileActivity extends Activity {
 	 */
 	private void initProgressListener() {
 		FragmentManager fm = getFragmentManager();
-		progress = (ProgressFragment) fm.findFragmentByTag("progress");
+		taskManager = (TaskManagerFragment) fm.findFragmentByTag(TaskManagerFragment.class.getSimpleName());
 
-		if (progress == null) {
-			progress = new ProgressFragment();
+		if (taskManager == null) {
+			taskManager = new TaskManagerFragment();
 
-			fm.beginTransaction().add(progress, "progess").commit();
+			fm.beginTransaction().add(taskManager, TaskManagerFragment.class.getSimpleName()).commit();
+		}
+
+		// Set current working state
+		blockUserInput(taskManager.isRunning());
+
+	}
+
+	protected void blockUserInput(boolean working) {
+		btnReset.setEnabled(!working);
+		btnInstall.setEnabled(!working);
+	}
+
+	class UserInputFragment extends Fragment {
+
+		protected Bitmap appIcon;
+		protected String appName;
+
+		@Override
+		public void onCreate(Bundle savedInstanceState) {
+			super.onCreate(savedInstanceState);
+			setRetainInstance(true);
 		}
 	}
 
-	public void btnReset(View btnReset) {
-	}
+	class TaskManagerFragment extends DialogFragment {
 
-	public void btnCancel(View btnCancel) {
+		protected String strStatus;
+		protected int intProgress;
 
-	}
+		ProgressDialog dialog;
 
-	public void btnInstall(View btnInstall) {
+		private ProgressTask runningTask;
+		private boolean activityReady = true;
+		private List<Runnable> lstPendingCallbacks = new LinkedList<Runnable>();
+
+		@Override
+		public void onCreate(Bundle savedInstanceState) {
+			super.onCreate(savedInstanceState);
+			setRetainInstance(true);
+		}
+
+		@Override
+		public Dialog onCreateDialog(Bundle savedInstanceState) {
+			dialog = new ProgressDialog(getActivity());
+			return dialog;
+		}
+
+		@Override
+		public void onActivityCreated(Bundle savedInstanceState) {
+			super.onActivityCreated(savedInstanceState);
+			activityReady = true;
+			int pendingCallbacks = lstPendingCallbacks.size();
+			while (pendingCallbacks-- > 0) {
+				getActivity().runOnUiThread(lstPendingCallbacks.remove(0));
+			}
+		}
+
+		@Override
+		public void onDetach() {
+			super.onDetach();
+			activityReady = false;
+		}
+
+		public void runWhenReady(Runnable runnable) {
+			if (activityReady) {
+				getActivity().runOnUiThread(runnable);
+			} else {
+				lstPendingCallbacks.add(runnable);
+			}
+		}
+
+		boolean isRunning() {
+			return runningTask != null;
+		}
+
+		void startClean(Object... params) {
+			if (runningTask == null) {
+				blockUserInput(true);
+				runningTask = new CleanTask(this, new Runnable() {
+					@Override
+					public void run() {
+						runningTask = null;
+						blockUserInput(false);
+					}
+				});
+				runningTask.execute(params);
+			}
+		}
+
+		void startBuild(Object... params) {
+			if (runningTask == null) {
+				blockUserInput(true);
+				runningTask = new BuildTask(this, new Runnable() {
+					@Override
+					public void run() {
+						runningTask = null;
+						blockUserInput(false);
+					}
+				});
+				runningTask.execute(params);
+			}
+		}
 
 	}
 
