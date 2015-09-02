@@ -148,15 +148,12 @@ public class SelfCompileActivity extends Activity implements Handler.Callback {
 
 		txtAppName.addTextChangedListener(new TextWatcher() {
 
-			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 			}
 
-			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
 			}
 
-			@Override
 			public void afterTextChanged(Editable s) {
 				userInput.appName = s.toString();
 			}
@@ -186,7 +183,6 @@ public class SelfCompileActivity extends Activity implements Handler.Callback {
 		taskManager.handler = new Handler(this);
 	}
 
-	@Override
 	public boolean handleMessage(Message msg) {
 		switch (msg.what) {
 
