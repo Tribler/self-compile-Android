@@ -2,14 +2,15 @@ package nl.tudelft.selfcompileapp;
 
 import java.io.File;
 
+import android.net.Uri;
+
 /**
- * Structure of app
+ * Structure of app files & directories
  * 
  * @author Paul Brussee
  */
 public class S {
 
-	// Tree structure
 	public static final File dirRoot = android.os.Environment
 			.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
 	public static final File dirProj = new File(dirRoot, "TEMP-app");
@@ -45,6 +46,8 @@ public class S {
 	public static final File apkUnsigned = new File(S.dirDist, "app.unsigned.apk");
 	public static final File apkUnaligned = new File(S.dirDist, "app.unaligned.apk");
 
+	public static Uri apkRedistributable = null;
+
 	public static void mkDirs() {
 		dirRoot.mkdirs();
 		dirProj.mkdirs();
@@ -71,4 +74,5 @@ public class S {
 		}
 		return strClassPath;
 	}
+
 }

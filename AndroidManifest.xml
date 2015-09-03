@@ -20,15 +20,14 @@
         android:largeHeap="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
-        <activity
-            android:name=".SelfCompileActivity"
-            android:label="@string/appName" >
+        <activity android:name=".SelfCompileActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".PickAppActivity" />
     </application>
 
 </manifest>

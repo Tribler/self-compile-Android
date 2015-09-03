@@ -11,7 +11,6 @@ import com.android.dx.merge.DexMerger;
 import com.android.sdklib.build.ApkBuilder;
 
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
 
@@ -181,7 +180,7 @@ public class BuildTask extends ProgressTask {
 		// TODO make zipalign.so
 	}
 
-	private void installApk() throws Exception {
+	private void publishApk() throws Exception {
 		String strAppName = appContext.getString(R.string.appName);
 
 		File apkCopy = new File(S.dirRoot, strAppName + ".apk");
@@ -193,11 +192,7 @@ public class BuildTask extends ProgressTask {
 		if (setProgress(100)) {
 			return;
 		}
-
-		Intent i = new Intent(Intent.ACTION_VIEW);
-		i.setDataAndType(Uri.fromFile(apkCopy), "application/vnd.android.package-archive");
-		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		appContext.startActivity(i);
+		S.apkRedistributable = Uri.fromFile(apkCopy);
 	}
 
 	public void run() {
@@ -251,7 +246,7 @@ public class BuildTask extends ProgressTask {
 			if (setProgress(95, R.string.publishApk)) {
 				return;
 			}
-			installApk();
+			publishApk();
 
 		} catch (Exception ex) {
 			ex.printStackTrace();

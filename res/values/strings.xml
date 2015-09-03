@@ -8,7 +8,7 @@
     <string name="certAlias">androiddebugkey</string>
     <string name="certPw">android</string>
     <string name="signatureAlgorithm">SHA1withRSA</string>
-    <string name="btnCloneApp">Pick</string>
+    <string name="btnMimicApp">Pick</string>
     <string name="btnReset">Reset</string>
     <string name="btnCancel">Cancel</string>
     <string name="btnInstall">Install</string>
