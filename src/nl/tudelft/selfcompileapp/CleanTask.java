@@ -1,7 +1,6 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 
 import android.content.Context;
@@ -75,7 +74,7 @@ public class CleanTask extends ProgressTask {
 			InputStream is = appContext.getAssets().open(file.getName());
 			Util.unzip(is, dest);
 			is.close();
-		} catch (IOException ex) {
+		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 	}
@@ -85,7 +84,7 @@ public class CleanTask extends ProgressTask {
 			InputStream is = appContext.getAssets().open(file.getName());
 			Util.copy(is, dest);
 			is.close();
-		} catch (IOException ex) {
+		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 	}

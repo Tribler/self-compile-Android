@@ -189,10 +189,13 @@ public class BuildTask extends ProgressTask {
 		}
 		Util.copy(S.apkUnaligned, new FileOutputStream(apkCopy));
 
+		S.apkRedistributable = Uri.fromFile(apkCopy);
+
+		System.out.println(S.apkRedistributable.toString()); // DEBUG
+
 		if (setProgress(100)) {
 			return;
 		}
-		S.apkRedistributable = Uri.fromFile(apkCopy);
 	}
 
 	public void run() {

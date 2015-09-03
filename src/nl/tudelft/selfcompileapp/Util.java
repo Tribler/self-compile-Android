@@ -4,15 +4,12 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.zip.ZipEntry;
@@ -29,7 +26,7 @@ public class Util {
 	/**
 	 * @source http://stackoverflow.com/a/304350
 	 */
-	private static byte[] hash(String alg, InputStream in) throws NoSuchAlgorithmException, IOException {
+	private static byte[] hash(String alg, InputStream in) throws Exception {
 		MessageDigest md = MessageDigest.getInstance(alg);
 		DigestInputStream dis = new DigestInputStream(new BufferedInputStream(in), md);
 		try {
@@ -73,7 +70,7 @@ public class Util {
 	/**
 	 * @source http://stackoverflow.com/a/27050680
 	 */
-	public static void unzip(InputStream zipFile, File targetDirectory) throws IOException {
+	public static void unzip(InputStream zipFile, File targetDirectory) throws Exception {
 		ZipInputStream in = new ZipInputStream(new BufferedInputStream(zipFile));
 		try {
 			ZipEntry ze;
@@ -83,7 +80,7 @@ public class Util {
 				File file = new File(targetDirectory, ze.getName());
 				File dir = ze.isDirectory() ? file : file.getParentFile();
 				if (!dir.isDirectory() && !dir.mkdirs()) {
-					throw new FileNotFoundException("Failed to ensure directory: " + dir.getAbsolutePath());
+					throw new Exception("Failed to ensure directory: " + dir.getAbsolutePath());
 				}
 				if (ze.isDirectory()) {
 					continue;
@@ -108,7 +105,7 @@ public class Util {
 	/**
 	 * @source http://stackoverflow.com/a/1399432
 	 */
-	public static void zip(File directory, File zipfile) throws IOException {
+	public static void zip(File directory, File zipfile) throws Exception {
 		URI base = directory.toURI();
 		Deque<File> queue = new LinkedList<File>();
 		queue.push(directory);
@@ -134,7 +131,7 @@ public class Util {
 		}
 	}
 
-	private static void copy(InputStream in, OutputStream out) throws IOException {
+	private static void copy(InputStream in, OutputStream out) throws Exception {
 		byte[] buffer = new byte[1024];
 		while (true) {
 			int readCount = in.read(buffer);
@@ -145,7 +142,7 @@ public class Util {
 		}
 	}
 
-	public static void copy(File file, OutputStream out) throws IOException {
+	public static void copy(File file, OutputStream out) throws Exception {
 		InputStream in = new BufferedInputStream(new FileInputStream(file));
 		try {
 			copy(in, out);
@@ -154,7 +151,7 @@ public class Util {
 		}
 	}
 
-	public static void copy(InputStream in, File file) throws IOException {
+	public static void copy(InputStream in, File file) throws Exception {
 		OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
 		try {
 			copy(in, out);

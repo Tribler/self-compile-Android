@@ -12,6 +12,7 @@
     <string name="btnReset">Reset</string>
     <string name="btnCancel">Cancel</string>
     <string name="btnInstall">Install</string>
+    <string name="btnShare">Share</string>
     <string name="stsClean">REMOVE OLD FILES</string>
     <string name="stsUnpackSrc">UNPACK SOURCE CODE</string>
     <string name="stsUnpackDep">UNPACK DEPENDENCIES</string>

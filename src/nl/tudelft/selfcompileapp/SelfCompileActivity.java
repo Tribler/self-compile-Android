@@ -1,9 +1,7 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
 import android.app.Activity;
@@ -52,6 +50,7 @@ public class SelfCompileActivity extends Activity {
 	Button btnReset;
 	Button btnCancel;
 	Button btnInstall;
+	Button btnShare;
 
 	protected void updateGui(boolean enabled) {
 		btnAppIcon.setEnabled(enabled);
@@ -64,6 +63,7 @@ public class SelfCompileActivity extends Activity {
 		btnReset.setEnabled(enabled);
 		btnCancel.setEnabled(!enabled);
 		btnInstall.setEnabled(enabled);
+		btnShare.setEnabled(enabled);
 	}
 
 	//////////////////// ACTIVITY LIFECYCLE ////////////////////
@@ -81,6 +81,7 @@ public class SelfCompileActivity extends Activity {
 		btnReset = (Button) findViewById(R.id.btnReset);
 		btnCancel = (Button) findViewById(R.id.btnCancel);
 		btnInstall = (Button) findViewById(R.id.btnInstall);
+		btnShare = (Button) findViewById(R.id.btnShare);
 
 		initUserInput();
 		initTaskManager();
@@ -121,17 +122,7 @@ public class SelfCompileActivity extends Activity {
 			userInput.setAppName(getString(R.string.appName));
 
 			// Default app icon
-			try {
-				InputStream is = getAssets().open(S.pngAppIcon.getName());
-
-				userInput.setAppIcon(
-						Bitmap.createScaledBitmap(BitmapFactory.decodeStream(is), ICON_WIDTH, ICON_HEIGHT, false));
-				is.close();
-
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
+			userInput.setAppIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher));
 		}
 
 		// Restore previous user input
@@ -291,12 +282,18 @@ class UserInputFragment extends Fragment {
 		// TODO: Write to R.strings.xml
 	}
 
-	void setAppIcon(Bitmap icon) throws FileNotFoundException {
+	void setAppIcon(Bitmap icon) {
 		appIcon = icon;
 
 		// Write to assets dir
-		FileOutputStream pngIcon = new FileOutputStream(S.pngAppIcon);
-		appIcon.compress(Bitmap.CompressFormat.PNG, 100, new BufferedOutputStream(pngIcon));
+		try {
+			FileOutputStream pngIcon = new FileOutputStream(S.pngAppIcon);
+			appIcon.compress(Bitmap.CompressFormat.PNG, 100, new BufferedOutputStream(pngIcon));
+			pngIcon.close();
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 
 		// TODO: Write to res/drawable-...
 	}
@@ -355,7 +352,8 @@ class TaskManagerFragment extends Fragment implements Handler.Callback {
 			intProgress = 0;
 			strStatus = "";
 			if (done != null) {
-				startActivity(done);
+				// FIXME: no activity to start from
+				getActivity().startActivity(done);
 				done = null;
 			}
 			break;
