@@ -347,7 +347,7 @@ class TaskManagerFragment extends Fragment implements Handler.Callback {
 	}
 
 	boolean isIdle() {
-		return runningTask == null || !runningTask.isAlive();
+		return runningTask == null;
 	}
 
 	//////////////////// FRAGMENT LIFECYCLE ////////////////////
@@ -371,7 +371,6 @@ class TaskManagerFragment extends Fragment implements Handler.Callback {
 			strStatus = "";
 			if (done != null) {
 				if (isAdded()) {
-					// FIXME: no activity to start from
 					((SelfCompileActivity) getActivity()).startActivity(done);
 				}
 				done = null;
@@ -406,8 +405,9 @@ class TaskManagerFragment extends Fragment implements Handler.Callback {
 
 	void cancelTask(SelfCompileActivity activity, Intent done) {
 		if (!isIdle()) {
-			this.done = done;
 			strStatus = activity.getString(R.string.stsCancel);
+			activity.updateGui(false);
+			this.done = done;
 			runningTask.interrupt();
 		}
 	}

@@ -247,6 +247,8 @@ public class BuildTask extends ProgressTask {
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			Thread.currentThread().interrupt();
+			setProgress(-1);
 		}
 		return;
 	}
