@@ -1,58 +1,98 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/RelativeLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:columnCount="3"
-    android:rowCount="11"
     tools:context=".SelfCompileActivity" >
 
-    <ImageButton
-        android:id="@+id/btnAppIcon"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_gravity="end"
-        android:onClick="btnPickIcon"
-        android:scaleType="centerInside" />
-
-    <EditText
-        android:id="@+id/txtAppName"
+    <ScrollView
+        android:id="@+id/frmChange"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_gravity="center|fill_horizontal"
-        android:layout_marginTop="13dp"
-        android:layout_toEndOf="@+id/btnAppIcon"
-        android:ems="10"
-        android:inputType="textCapWords" />
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/ButtonBar" >
 
-    <Button
-        android:id="@+id/btnMimicApp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/btnAppIcon"
-        android:layout_gravity="end"
-        android:layout_toEndOf="@+id/btnShare"
-        android:onClick="btnMimicApp"
-        android:text="@string/btnMimicApp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:scrollbars="vertical" >
 
-    <Spinner
-        android:id="@+id/spnAppTheme"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/btnMimicApp"
-        android:layout_gravity="fill_horizontal"
-        tools:listitem="@android:layout/simple_spinner_dropdown_item" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="You can change the appearance and functionality of this app.\nThe source code can be found on the SD card.\n\nShare the new app via NFC by placing your phone back to back with another Android phone (both having Android Beam enabled).\n"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="\nLook like another app:\n"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <Button
+                    android:id="@+id/btnMimicApp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:onClick="btnMimicApp"
+                    android:text="@string/btnMimicApp" />
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="\nChange icon &amp; name:\n"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+
+                <ImageView
+                    android:id="@+id/btnAppIcon"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:onClick="btnPickIcon"
+                    android:scaleType="centerInside" />
+
+                <EditText
+                    android:id="@+id/txtAppName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_toEndOf="@+id/btnAppIcon"
+                    android:layout_toRightOf="@+id/btnAppIcon"
+                    android:ems="12"
+                    android:inputType="textCapWords" />
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="\nChange colors:"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <Spinner
+                android:id="@+id/spnAppTheme"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:listitem="@android:layout/simple_spinner_item" />
+        </LinearLayout>
+    </ScrollView>
 
     <TextView
         android:id="@+id/lblStatus"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_alignStart="@+id/spnAppTheme"
-        android:layout_below="@+id/spnAppTheme"
+        android:layout_above="@+id/prbProgress"
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:visibility="invisible" />
 
@@ -61,47 +101,63 @@
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_alignStart="@+id/spnAppTheme"
-        android:layout_below="@+id/lblStatus"
+        android:layout_above="@+id/ButtonBar"
         android:indeterminate="false"
         android:max="100"
         android:progress="0"
         android:visibility="invisible" />
 
-    <Button
-        android:id="@+id/btnReset"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/ButtonBar"
+        style="?android:attr/buttonBarStyle"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:onClick="btnReset"
-        android:text="@string/btnReset" />
+        android:gravity="center"
+        android:showDividers="middle" >
 
-    <Button
-        android:id="@+id/btnCancel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toEndOf="@+id/btnReset"
-        android:enabled="false"
-        android:onClick="btnCancel"
-        android:text="@string/btnCancel" />
+        <Button
+            android:id="@+id/btnReset"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="btnReset"
+            android:text="@string/btnReset" />
 
-    <Button
-        android:id="@+id/btnInstall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toEndOf="@+id/btnCancel"
-        android:onClick="btnInstall"
-        android:text="@string/btnInstall" />
+        <Button
+            android:id="@+id/btnCancel"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:onClick="btnCancel"
+            android:text="@string/btnCancel"
+            android:visibility="gone" />
 
-    <Button
-        android:id="@+id/btnShare"
+        <Button
+            android:id="@+id/btnInstall"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="btnInstall"
+            android:text="@string/btnInstall" />
+
+        <Button
+            android:id="@+id/btnShare"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="btnShare"
+            android:text="@string/btnShare" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/prbSpinner"
+        style="?android:attr/progressBarStyleLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toEndOf="@+id/btnInstall"
-        android:text="@string/btnShare" />
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:visibility="gone" />
 
 </RelativeLayout>

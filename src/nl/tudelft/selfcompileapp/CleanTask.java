@@ -17,6 +17,7 @@ public class CleanTask extends ProgressTask {
 		if (setProgress(1, R.string.stsClean)) {
 			return;
 		}
+		S.apkRedistributable.delete();
 		Util.deleteRecursive(S.dirProj);
 
 		if (setProgress(10, R.string.stsUnpackSrc)) {

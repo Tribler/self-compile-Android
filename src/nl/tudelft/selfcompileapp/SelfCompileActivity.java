@@ -1,6 +1,7 @@
 package nl.tudelft.selfcompileapp;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
@@ -21,7 +22,7 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -42,27 +43,33 @@ public class SelfCompileActivity extends Activity {
 	UserInputFragment userInput;
 	TaskManagerFragment taskManager;
 
-	ImageButton btnAppIcon;
+	View frmChange;
+	ImageView btnAppIcon;
 	EditText txtAppName;
 	Button btnMimicApp;
 	TextView lblStatus;
 	ProgressBar prbProgress;
+	ProgressBar prbSpinner;
 	Button btnReset;
 	Button btnCancel;
 	Button btnInstall;
 	Button btnShare;
 
 	protected void updateGui(boolean enabled) {
-		btnAppIcon.setEnabled(enabled);
+		frmChange.setVisibility(!enabled ? View.GONE : View.VISIBLE);
 		txtAppName.setEnabled(enabled);
-		btnMimicApp.setEnabled(enabled);
-		lblStatus.setVisibility(enabled ? View.INVISIBLE : View.VISIBLE);
+		lblStatus.setVisibility(enabled ? View.GONE : View.VISIBLE);
 		lblStatus.setText(taskManager.getStatus());
-		prbProgress.setVisibility(enabled ? View.INVISIBLE : View.VISIBLE);
+		prbProgress.setVisibility(enabled ? View.GONE : View.VISIBLE);
 		prbProgress.setProgress(taskManager.getProgress());
+		prbSpinner.setVisibility(enabled ? View.GONE : View.VISIBLE);
+		btnReset.setVisibility(!enabled ? View.GONE : View.VISIBLE);
 		btnReset.setEnabled(enabled);
+		btnCancel.setVisibility(enabled ? View.GONE : View.VISIBLE);
 		btnCancel.setEnabled(!enabled);
+		btnInstall.setVisibility(!enabled ? View.GONE : View.VISIBLE);
 		btnInstall.setEnabled(enabled);
+		btnShare.setVisibility(!enabled ? View.GONE : View.VISIBLE);
 		btnShare.setEnabled(enabled);
 	}
 
@@ -73,15 +80,19 @@ public class SelfCompileActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_self_compile);
 
-		btnAppIcon = (ImageButton) findViewById(R.id.btnAppIcon);
+		frmChange = findViewById(R.id.frmChange);
+		btnAppIcon = (ImageView) findViewById(R.id.btnAppIcon);
 		txtAppName = (EditText) findViewById(R.id.txtAppName);
 		btnMimicApp = (Button) findViewById(R.id.btnMimicApp);
 		lblStatus = (TextView) findViewById(R.id.lblStatus);
 		prbProgress = (ProgressBar) findViewById(R.id.prbProgress);
+		prbSpinner = (ProgressBar) findViewById(R.id.prbSpinner);
 		btnReset = (Button) findViewById(R.id.btnReset);
 		btnCancel = (Button) findViewById(R.id.btnCancel);
 		btnInstall = (Button) findViewById(R.id.btnInstall);
 		btnShare = (Button) findViewById(R.id.btnShare);
+
+		S.mkDirs();
 
 		initUserInput();
 		initTaskManager();
@@ -147,7 +158,8 @@ public class SelfCompileActivity extends Activity {
 
 	//////////////////// ON CLICK BUTTONS ////////////////////
 
-	public void btnPickIcon(View btnPickIcon) {
+	public void btnAppIcon(View btnAppIcon) {
+		btnAppIcon.setEnabled(false);
 		Intent pickIcon = new Intent(Intent.ACTION_PICK);
 		pickIcon.setType("image/*");
 		startActivityForResult(pickIcon, REQ_APP_ICON);
@@ -172,9 +184,9 @@ public class SelfCompileActivity extends Activity {
 	public void btnInstall(View btnInstall) {
 		btnInstall.setEnabled(false);
 		Intent i = new Intent(Intent.ACTION_VIEW);
-		i.setDataAndType(S.apkRedistributable, "application/vnd.android.package-archive");
+		i.setDataAndType(Uri.fromFile(S.apkRedistributable), "application/vnd.android.package-archive");
 		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		if (S.apkRedistributable != null) {
+		if (S.apkRedistributable.exists()) {
 			startActivity(i);
 		} else {
 			taskManager.startBuild(this, i);
@@ -186,7 +198,7 @@ public class SelfCompileActivity extends Activity {
 		Intent i = new Intent(Intent.ACTION_SEND);
 		i.setType("application/zip");
 		i.putExtra(Intent.EXTRA_STREAM, S.apkRedistributable);
-		if (S.apkRedistributable != null) {
+		if (S.apkRedistributable.exists()) {
 			startActivity(i);
 		} else {
 			taskManager.startBuild(this, i);
@@ -214,6 +226,8 @@ public class SelfCompileActivity extends Activity {
 
 					btnAppIcon.setImageBitmap(icon);
 
+					btnAppIcon.setEnabled(true);
+
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
@@ -236,6 +250,8 @@ public class SelfCompileActivity extends Activity {
 
 					txtAppName.setText(name);
 					btnAppIcon.setImageBitmap(icon);
+
+					btnMimicApp.setEnabled(true);
 
 				} catch (Exception ex) {
 					ex.printStackTrace();
@@ -278,6 +294,8 @@ class UserInputFragment extends Fragment {
 
 	void setAppName(String name) {
 		appName = name;
+
+		S.apkRedistributable = new File(S.dirRoot, appName + ".apk");
 
 		// TODO: Write to R.strings.xml
 	}
@@ -352,8 +370,10 @@ class TaskManagerFragment extends Fragment implements Handler.Callback {
 			intProgress = 0;
 			strStatus = "";
 			if (done != null) {
-				// FIXME: no activity to start from
-				getActivity().startActivity(done);
+				if (isAdded()) {
+					// FIXME: no activity to start from
+					((SelfCompileActivity) getActivity()).startActivity(done);
+				}
 				done = null;
 			}
 			break;
@@ -387,6 +407,7 @@ class TaskManagerFragment extends Fragment implements Handler.Callback {
 	void cancelTask(SelfCompileActivity activity, Intent done) {
 		if (!isIdle()) {
 			this.done = done;
+			strStatus = activity.getString(R.string.stsCancel);
 			runningTask.interrupt();
 		}
 	}

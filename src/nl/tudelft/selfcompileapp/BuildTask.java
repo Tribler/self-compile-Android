@@ -11,7 +11,6 @@ import com.android.dx.merge.DexMerger;
 import com.android.sdklib.build.ApkBuilder;
 
 import android.content.Context;
-import android.net.Uri;
 import android.os.Handler;
 
 public class BuildTask extends ProgressTask {
@@ -181,17 +180,12 @@ public class BuildTask extends ProgressTask {
 	}
 
 	private void publishApk() throws Exception {
-		String strAppName = appContext.getString(R.string.appName);
-
-		File apkCopy = new File(S.dirRoot, strAppName + ".apk");
-		if (apkCopy.exists()) {
-			apkCopy.delete();
+		if (S.apkRedistributable.exists()) {
+			S.apkRedistributable.delete();
 		}
-		Util.copy(S.apkUnaligned, new FileOutputStream(apkCopy));
+		Util.copy(S.apkUnaligned, new FileOutputStream(S.apkRedistributable));
 
-		S.apkRedistributable = Uri.fromFile(apkCopy);
-
-		System.out.println(S.apkRedistributable.toString()); // DEBUG
+		System.out.println(S.apkRedistributable.toString());
 
 		if (setProgress(100)) {
 			return;

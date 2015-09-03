@@ -8,11 +8,12 @@
     <string name="certAlias">androiddebugkey</string>
     <string name="certPw">android</string>
     <string name="signatureAlgorithm">SHA1withRSA</string>
-    <string name="btnMimicApp">Pick</string>
+    <string name="btnMimicApp">Choose</string>
     <string name="btnReset">Reset</string>
     <string name="btnCancel">Cancel</string>
     <string name="btnInstall">Install</string>
     <string name="btnShare">Share</string>
+    <string name="stsCancel">CANCELLING…</string>
     <string name="stsClean">REMOVE OLD FILES</string>
     <string name="stsUnpackSrc">UNPACK SOURCE CODE</string>
     <string name="stsUnpackDep">UNPACK DEPENDENCIES</string>

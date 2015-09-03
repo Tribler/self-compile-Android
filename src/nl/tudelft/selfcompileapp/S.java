@@ -2,8 +2,6 @@ package nl.tudelft.selfcompileapp;
 
 import java.io.File;
 
-import android.net.Uri;
-
 /**
  * Structure of app files & directories
  * 
@@ -46,7 +44,7 @@ public class S {
 	public static final File apkUnsigned = new File(S.dirDist, "app.unsigned.apk");
 	public static final File apkUnaligned = new File(S.dirDist, "app.unaligned.apk");
 
-	public static Uri apkRedistributable = null;
+	public static File apkRedistributable = null;
 
 	public static void mkDirs() {
 		dirRoot.mkdirs();

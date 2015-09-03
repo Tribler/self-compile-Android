@@ -20,7 +20,9 @@
         android:largeHeap="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
-        <activity android:name=".SelfCompileActivity" >
+        <activity
+            android:name=".SelfCompileActivity"
+            android:windowSoftInputMode="stateUnchanged" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
