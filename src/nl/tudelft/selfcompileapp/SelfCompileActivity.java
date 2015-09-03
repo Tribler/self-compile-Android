@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -53,7 +54,6 @@ public class SelfCompileActivity extends Activity {
 	Button btnReset;
 	Button btnCancel;
 	Button btnInstall;
-	Button btnShare;
 
 	protected void updateGui(boolean enabled) {
 		frmChange.setVisibility(!enabled ? View.GONE : View.VISIBLE);
@@ -69,8 +69,6 @@ public class SelfCompileActivity extends Activity {
 		btnCancel.setEnabled(!enabled);
 		btnInstall.setVisibility(!enabled ? View.GONE : View.VISIBLE);
 		btnInstall.setEnabled(enabled);
-		btnShare.setVisibility(!enabled ? View.GONE : View.VISIBLE);
-		btnShare.setEnabled(enabled);
 	}
 
 	//////////////////// ACTIVITY LIFECYCLE ////////////////////
@@ -90,16 +88,28 @@ public class SelfCompileActivity extends Activity {
 		btnReset = (Button) findViewById(R.id.btnReset);
 		btnCancel = (Button) findViewById(R.id.btnCancel);
 		btnInstall = (Button) findViewById(R.id.btnInstall);
-		btnShare = (Button) findViewById(R.id.btnShare);
 
 		S.mkDirs();
 
 		initUserInput();
 		initTaskManager();
+		if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC)) {
+			initNfc();
 
+		}
 		if (!S.dirProj.exists()) {
 			btnReset(btnReset);
 		}
+	}
+
+	private void initNfc() {
+		NfcAdapter.getDefaultAdapter(this).setBeamPushUrisCallback(new NfcAdapter.CreateBeamUrisCallback() {
+
+			public Uri[] createBeamUris(android.nfc.NfcEvent event) {
+
+				return new Uri[] { Uri.fromFile(S.apkRedistributable) };
+			}
+		}, this);
 	}
 
 	//////////////////// RETAINED FRAGMENTS ////////////////////
@@ -193,18 +203,6 @@ public class SelfCompileActivity extends Activity {
 		}
 	}
 
-	public void btnShare(View btnShare) {
-		btnShare.setEnabled(false);
-		Intent i = new Intent(Intent.ACTION_SEND);
-		i.setType("application/zip");
-		i.putExtra(Intent.EXTRA_STREAM, S.apkRedistributable);
-		if (S.apkRedistributable.exists()) {
-			startActivity(i);
-		} else {
-			taskManager.startBuild(this, i);
-		}
-	}
-
 	//////////////////// INTENT CALLBACKS ////////////////////
 
 	@Override
@@ -260,7 +258,6 @@ public class SelfCompileActivity extends Activity {
 			break;
 		}
 	}
-
 }
 
 /**

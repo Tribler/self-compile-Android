@@ -185,7 +185,7 @@ public class BuildTask extends ProgressTask {
 		}
 		Util.copy(S.apkUnaligned, new FileOutputStream(S.apkRedistributable));
 
-		System.out.println(S.apkRedistributable.toString());
+		S.apkRedistributable.setReadable(true, false);
 
 		if (setProgress(100)) {
 			return;

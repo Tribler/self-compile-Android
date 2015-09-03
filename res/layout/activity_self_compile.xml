@@ -20,7 +20,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="You can change the appearance and functionality of this app.\nThe source code can be found on the SD card.\n\nShare the new app via NFC by placing your phone back to back with another Android phone (both having Android Beam enabled).\n"
+                android:text="You can change the appearance and functionality of this app.\nThe source code can be found on the SD card.\n\nShare the new app by simply placing your phone back to back with another Android phone (both having Android Beam enabled) and tap to send.\n"
                 android:textAppearance="?android:attr/textAppearanceSmall" />
 
             <RelativeLayout
@@ -121,6 +121,7 @@
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="0.1"
             android:onClick="btnReset"
             android:text="@string/btnReset" />
 
@@ -129,6 +130,7 @@
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="0.1"
             android:enabled="false"
             android:onClick="btnCancel"
             android:text="@string/btnCancel"
@@ -139,16 +141,9 @@
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="0.1"
             android:onClick="btnInstall"
             android:text="@string/btnInstall" />
-
-        <Button
-            android:id="@+id/btnShare"
-            style="?android:attr/buttonBarButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="btnShare"
-            android:text="@string/btnShare" />
     </LinearLayout>
 
     <ProgressBar
