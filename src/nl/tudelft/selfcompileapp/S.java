@@ -12,7 +12,6 @@ public class S {
 	public static final File dirRoot = android.os.Environment
 			.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
 	public static final File dirProj = new File(dirRoot, "TEMP-app");
-	public static final File dirLog = new File(dirRoot, "../AaptJNI");
 
 	/* PROJECT */
 	public static final File dirSrc = new File(dirProj, "src");
@@ -81,7 +80,6 @@ public class S {
 	public static void mkDirs() {
 		dirRoot.mkdirs();
 		dirProj.mkdirs();
-		dirLog.mkdirs();
 		dirSrc.mkdirs();
 		dirGen.mkdirs();
 		dirRes.mkdirs();

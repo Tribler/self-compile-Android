@@ -6,6 +6,12 @@ import java.io.*;
  * @author Tom Arn (www.t-arn.com)
  */
 public class Aapt {
+
+	public static final File dirLog = new File("/storage/emulated/0/.AaptJNI");
+
+	public static final File txtOut = new File(dirLog, "native_stdout.txt");
+	public static final File txtErr = new File(dirLog, "native_stderr.txt");
+
 	private static boolean bInitialized = false;
 
 	private native int JNImain(String args);
@@ -22,6 +28,7 @@ public class Aapt {
 
 	private static boolean fnInit() {
 		try {
+			dirLog.mkdirs();
 			System.out.println("Loading native library aaptcomplete...");
 			System.loadLibrary("aaptcomplete");
 			bInitialized = true;
@@ -45,7 +52,7 @@ public class Aapt {
 		LineNumberReader lnr;
 		String st = "";
 		try {
-			lnr = new LineNumberReader(new FileReader("/storage/emulated/0/.AaptJNI/native_stdout.txt"));
+			lnr = new LineNumberReader(new FileReader(txtOut));
 			st = "";
 			while (st != null) {
 				st = lnr.readLine();
@@ -53,7 +60,7 @@ public class Aapt {
 					System.out.println(st);
 			}
 			lnr.close();
-			lnr = new LineNumberReader(new FileReader("/storage/emulated/0/.AaptJNI/native_stderr.txt"));
+			lnr = new LineNumberReader(new FileReader(txtErr));
 			st = "";
 			while (st != null) {
 				st = lnr.readLine();

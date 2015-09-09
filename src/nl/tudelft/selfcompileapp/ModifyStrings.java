@@ -16,7 +16,7 @@ public class ModifyStrings extends ProgressTask {
 
 		dom.getElementsByTagName("string").item(0).setTextContent(userInput.appName);
 
-		Util.writeXml(dom, S.xmlMan);
+		Util.writeXml(dom, S.xmlStrings);
 	}
 
 	public void run() {
