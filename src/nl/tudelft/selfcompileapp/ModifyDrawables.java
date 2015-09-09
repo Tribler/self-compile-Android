@@ -22,16 +22,16 @@ public class ModifyDrawables extends ProgressTask {
 
 		try {
 			Bitmap icon = userInput.appIcon;
-			FileOutputStream pngIcon = new FileOutputStream(S.pngAppIcon);
-			icon.compress(Bitmap.CompressFormat.PNG, 100, new BufferedOutputStream(pngIcon));
+			BufferedOutputStream pngIcon = new BufferedOutputStream(new FileOutputStream(S.pngAppIcon));
+			icon.compress(Bitmap.CompressFormat.PNG, 100, pngIcon);
 			pngIcon.close();
 
 			if (setProgress(20)) {
 				return;
 			}
 			icon = Bitmap.createScaledBitmap(userInput.appIcon, MDPI_ICON_PIXELS, MDPI_ICON_PIXELS, false);
-			pngIcon = new FileOutputStream(S.pngAppIconMdpi);
-			icon.compress(Bitmap.CompressFormat.PNG, 100, new BufferedOutputStream(pngIcon));
+			pngIcon = new BufferedOutputStream(new FileOutputStream(S.pngAppIconMdpi));
+			icon.compress(Bitmap.CompressFormat.PNG, 100, pngIcon);
 			pngIcon.close();
 			icon.recycle();
 
@@ -39,8 +39,8 @@ public class ModifyDrawables extends ProgressTask {
 				return;
 			}
 			icon = Bitmap.createScaledBitmap(userInput.appIcon, HDPI_ICON_PIXELS, HDPI_ICON_PIXELS, false);
-			pngIcon = new FileOutputStream(S.pngAppIconHdpi);
-			icon.compress(Bitmap.CompressFormat.PNG, 100, new BufferedOutputStream(pngIcon));
+			pngIcon = new BufferedOutputStream(new FileOutputStream(S.pngAppIconHdpi));
+			icon.compress(Bitmap.CompressFormat.PNG, 100, pngIcon);
 			pngIcon.close();
 			icon.recycle();
 
@@ -48,8 +48,8 @@ public class ModifyDrawables extends ProgressTask {
 				return;
 			}
 			icon = Bitmap.createScaledBitmap(userInput.appIcon, XHDPI_ICON_PIXELS, XHDPI_ICON_PIXELS, false);
-			pngIcon = new FileOutputStream(S.pngAppIconXhdpi);
-			icon.compress(Bitmap.CompressFormat.PNG, 100, new BufferedOutputStream(pngIcon));
+			pngIcon = new BufferedOutputStream(new FileOutputStream(S.pngAppIconXhdpi));
+			icon.compress(Bitmap.CompressFormat.PNG, 100, pngIcon);
 			pngIcon.close();
 			icon.recycle();
 
@@ -57,8 +57,8 @@ public class ModifyDrawables extends ProgressTask {
 				return;
 			}
 			icon = Bitmap.createScaledBitmap(userInput.appIcon, XXHDPI_ICON_PIXELS, XXHDPI_ICON_PIXELS, false);
-			pngIcon = new FileOutputStream(S.pngAppIconXxhdpi);
-			icon.compress(Bitmap.CompressFormat.PNG, 100, new BufferedOutputStream(pngIcon));
+			pngIcon = new BufferedOutputStream(new FileOutputStream(S.pngAppIconXxhdpi));
+			icon.compress(Bitmap.CompressFormat.PNG, 100, pngIcon);
 			pngIcon.close();
 			icon.recycle();
 

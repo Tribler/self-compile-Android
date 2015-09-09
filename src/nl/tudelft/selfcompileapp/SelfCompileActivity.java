@@ -293,7 +293,7 @@ public class SelfCompileActivity extends Activity {
 					Bitmap icon = Bitmap.createScaledBitmap(b, ModifyDrawables.XXHDPI_ICON_PIXELS,
 							ModifyDrawables.XXHDPI_ICON_PIXELS, false);
 					is.close();
-					icon.recycle();
+					b.recycle();
 
 					userInput.setAppIcon(icon);
 
