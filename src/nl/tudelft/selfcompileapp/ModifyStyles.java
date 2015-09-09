@@ -30,7 +30,7 @@ public class ModifyStyles extends ProgressTask {
 				}
 			}
 
-			Util.writeXml(dom, S.xmlMan);
+			Util.writeXml(dom, xmlStyles);
 
 		} catch (Exception e) {
 			e.printStackTrace();
