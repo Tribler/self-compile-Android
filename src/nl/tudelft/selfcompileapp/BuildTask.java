@@ -108,7 +108,7 @@ public class BuildTask extends ProgressTask {
 	}
 
 	private void buildApk() throws Exception {
-		// Do NOT use embedded JarSigner
+		// Do NOT use ApkBuilder's embedded JarSigner
 		PrivateKey privateKey = null;
 		X509Certificate x509Cert = null;
 

@@ -16,12 +16,42 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
 public class Util {
+
+	public static final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+	public static final TransformerFactory tf = TransformerFactory.newInstance();
+
+	public static Document readXml(File xmlFile) throws Exception {
+		DocumentBuilder db = dbf.newDocumentBuilder();
+		return db.parse(xmlFile);
+	}
+
+	/**
+	 * @source http://stackoverflow.com/a/7373596
+	 */
+	public static void writeXml(Document dom, File xmlFile) throws Exception {
+		Transformer t = tf.newTransformer();
+		t.setOutputProperty(OutputKeys.INDENT, "yes");
+		t.setOutputProperty(OutputKeys.METHOD, "xml");
+		t.setOutputProperty(OutputKeys.VERSION, "1.0");
+		t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		t.transform(new DOMSource(dom), new StreamResult(new FileOutputStream(xmlFile)));
+	}
 
 	/**
 	 * @source http://stackoverflow.com/a/304350

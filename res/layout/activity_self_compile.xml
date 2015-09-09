@@ -20,7 +20,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="You can change the appearance and functionality of this app.\nThe source code can be found on the SD card.\n\nShare the new app by simply placing your phone back to back with another Android phone (both having Android Beam enabled) and tap to send.\n"
+                android:text="You can change the appearance and functionality of this app completely.\nThe source code can be found on the SD card.\n\nShare the new app by simply placing your phone back to back with another Android phone (both having Android Beam enabled), then tap to send.\n"
                 android:textAppearance="?android:attr/textAppearanceSmall" />
 
             <RelativeLayout
@@ -48,7 +48,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="\nChange icon &amp; name:\n"
+                android:text="Change icon &amp; name:\n"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <RelativeLayout
@@ -59,7 +59,7 @@
                     android:id="@+id/btnAppIcon"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:onClick="btnPickIcon"
+                    android:onClick="btnAppIcon"
                     android:scaleType="centerInside" />
 
                 <EditText
@@ -69,7 +69,6 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:layout_toEndOf="@+id/btnAppIcon"
-                    android:layout_toRightOf="@+id/btnAppIcon"
                     android:ems="12"
                     android:inputType="textCapWords" />
             </RelativeLayout>
@@ -77,14 +76,27 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="\nChange colors:"
+                android:text="\n\nChange theme &amp; colors:\n"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <Spinner
                 android:id="@+id/spnAppTheme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                tools:listitem="@android:layout/simple_spinner_item" />
+                android:entries="@array/appThemes" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="\n\nChange package (no spaces):\n"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <EditText
+                android:id="@+id/txtAppPackage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="12"
+                android:inputType="text" />
         </LinearLayout>
     </ScrollView>
 
