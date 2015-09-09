@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -48,7 +49,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Change icon &amp; name:\n"
+                android:text="Change icon and name:\n"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <RelativeLayout
@@ -76,7 +77,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="\n\nChange theme &amp; colors:\n"
+                android:text="\n\nChange theme and colors:\n"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <Spinner

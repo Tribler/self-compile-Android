@@ -12,6 +12,7 @@ public class S {
 	public static final File dirRoot = android.os.Environment
 			.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
 	public static final File dirProj = new File(dirRoot, "TEMP-app");
+	public static final File dirLog = new File(dirRoot, "../AaptJNI");
 
 	/* PROJECT */
 	public static final File dirSrc = new File(dirProj, "src");
@@ -21,11 +22,8 @@ public class S {
 	public static final File dirAssets = new File(dirProj, "assets");
 	public static final File dirBin = new File(dirProj, "bin");
 	public static final File dirDist = new File(dirProj, "dist");
-	public static final File dirLog = new File(dirProj, "log");
 
 	public static final File xmlMan = new File(dirProj, "AndroidManifest.xml");
-	public static final File txtOut = new File(dirProj, "native_stdout.txt");
-	public static final File txtErr = new File(dirProj, "native_stderr.txt");
 
 	/* RES */
 	public static final File dirDrawLdpi = new File(dirRes, "drawable-ldpi");

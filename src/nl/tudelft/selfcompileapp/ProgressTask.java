@@ -6,10 +6,12 @@ import android.os.Message;
 
 abstract public class ProgressTask implements Runnable {
 
+	UserInputFragment userInput;
 	Context appContext;
 	Handler listener;
 
-	ProgressTask(Context appContext, Handler listener) {
+	ProgressTask(UserInputFragment userInput, Context appContext, Handler listener) {
+		this.userInput = userInput;
 		this.appContext = appContext;
 		this.listener = listener;
 	}

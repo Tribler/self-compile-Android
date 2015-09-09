@@ -2,9 +2,13 @@ package nl.tudelft.selfcompileapp;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
@@ -46,11 +50,52 @@ public class Util {
 	 */
 	public static void writeXml(Document dom, File xmlFile) throws Exception {
 		Transformer t = tf.newTransformer();
+		t.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 		t.setOutputProperty(OutputKeys.INDENT, "yes");
 		t.setOutputProperty(OutputKeys.METHOD, "xml");
 		t.setOutputProperty(OutputKeys.VERSION, "1.0");
 		t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 		t.transform(new DOMSource(dom), new StreamResult(new FileOutputStream(xmlFile)));
+	}
+
+	/**
+	 * @source http://stackoverflow.com/a/8563446
+	 */
+	public static void replaceFirstLine(String newLine, File file) {
+		File tmpFile = new File(file.getPath(), file.getName() + ".tmp");
+		BufferedReader br = null;
+		BufferedWriter bw = null;
+		try {
+			br = new BufferedReader(new FileReader(file));
+			bw = new BufferedWriter(new FileWriter(tmpFile));
+			String line;
+			boolean first = true;
+			while ((line = br.readLine()) != null) {
+				if (first) {
+					first = false;
+					line = newLine;
+				}
+				bw.write(line + "\n");
+			}
+		} catch (Exception e) {
+			return;
+		} finally {
+			try {
+				if (br != null)
+					br.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			try {
+				if (bw != null)
+					bw.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		file.delete();
+		tmpFile.renameTo(file);
+
 	}
 
 	/**

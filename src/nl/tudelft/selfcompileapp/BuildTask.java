@@ -9,14 +9,15 @@ import com.android.dex.Dex;
 import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
 import com.android.sdklib.build.ApkBuilder;
+import com.arn.tom.Aapt;
 
 import android.content.Context;
 import android.os.Handler;
 
 public class BuildTask extends ProgressTask {
 
-	BuildTask(Context appContext, Handler listener) {
-		super(appContext, listener);
+	BuildTask(UserInputFragment userInput, Context appContext, Handler listener) {
+		super(userInput, appContext, listener);
 	}
 
 	private void runAidl() throws Exception {
@@ -250,7 +251,6 @@ public class BuildTask extends ProgressTask {
 			Thread.currentThread().interrupt();
 			setProgress(-1);
 		}
-		return;
 	}
 
 	class CompileProgress extends org.eclipse.jdt.core.compiler.CompilationProgress {

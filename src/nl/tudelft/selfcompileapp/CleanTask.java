@@ -8,8 +8,8 @@ import android.os.Handler;
 
 public class CleanTask extends ProgressTask {
 
-	CleanTask(Context appContext, Handler listener) {
-		super(appContext, listener);
+	CleanTask(UserInputFragment userInput, Context appContext, Handler listener) {
+		super(userInput, appContext, listener);
 	}
 
 	public void run() {
@@ -17,7 +17,6 @@ public class CleanTask extends ProgressTask {
 		if (setProgress(1, R.string.stsClean)) {
 			return;
 		}
-		S.apkRedistributable.delete();
 		Util.deleteRecursive(S.dirProj);
 
 		if (setProgress(10, R.string.stsUnpackSrc)) {

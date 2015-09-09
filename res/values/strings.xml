@@ -3,19 +3,29 @@
 
 	<string name="appName">SelfCompileApp</string>
 	<string name="platform">android-18</string>
+
 	<string name="keystore">Embedded.jks</string>
 	<string name="keystorePw">android</string>
 	<string name="certAlias">androiddebugkey</string>
 	<string name="certPw">android</string>
 	<string name="signatureAlgorithm">SHA1withRSA</string>
+
 	<string name="btnMimicApp">Choose</string>
 	<string name="btnReset">Reset</string>
 	<string name="btnCancel">Cancel</string>
 	<string name="btnInstall">Install</string>
+
 	<string name="stsCancel">CANCELLING…</string>
+
 	<string name="stsClean">REMOVE OLD FILES</string>
 	<string name="stsUnpackSrc">UNPACK SOURCE CODE</string>
 	<string name="stsUnpackDep">UNPACK DEPENDENCIES</string>
+
+	<string name="stsModifyDrawables">CHANGE APP ICON</string>
+	<string name="stsModifyStrings">CHANGE APP NAME</string>
+	<string name="stsModifyStyles">CHANGE THEME</string>
+	<string name="stsModifySource">CHANGE SOURCE CODE</string>
+
 	<string name="runAidl">PROCESS INTERFACES</string>
 	<string name="runAapt">PROCESS RESOURCES</string>
 	<string name="compileJava">COMPILE SOURCE</string>
@@ -30,29 +40,29 @@
 	<string name="publishApk">PREPARE INSTALLATION</string>
 
 	<string-array name="appThemes">
-		<item>android:Theme.DeviceDefault</item>
-		<item>android:Theme.DeviceDefault.NoActionBar</item>
-		<item>android:Theme.DeviceDefault.NoActionBar.Fullscreen</item>
-		<item>android:Theme.DeviceDefault.Light</item>
-		<item>android:Theme.DeviceDefault.Light.DarkActionBar</item>
-		<item>android:Theme.DeviceDefault.Light.NoActionBar</item>
-		<item>android:Theme.DeviceDefault.Light.NoActionBar.Fullscreen</item>
-		<item>android:Theme.Holo</item>
-		<item>android:Theme.Holo.NoActionBar</item>
-		<item>android:Theme.Holo.NoActionBar.Fullscreen</item>
-		<item>android:Theme.Holo.Light</item>
-		<item>android:Theme.Holo.Light.DarkActionBar</item>
-		<item>android:Theme.Holo.Light.NoActionBar</item>
-		<item>android:Theme.Holo.Light.NoActionBar.Fullscreen</item>
-		<item>android:Theme.Black</item>
-		<item>android:Theme.Black.NoTitleBar</item>
-		<item>android:Theme.Black.NoTitleBar.Fullscreen</item>
-		<item>android:Theme.Light</item>
-		<item>android:Theme.Light.NoTitleBar</item>
-		<item>android:Theme.Light.NoTitleBar.Fullscreen</item>
-		<item>android:Theme.Wallpaper</item>
-		<item>android:Theme.Wallpaper.NoTitleBar</item>
-		<item>android:Theme.Wallpaper.NoTitleBar.Fullscreen</item>
+		<item>DeviceDefault</item>
+		<item>DeviceDefault.NoActionBar</item>
+		<item>DeviceDefault.NoActionBar.Fullscreen</item>
+		<item>DeviceDefault.Light</item>
+		<item>DeviceDefault.Light.DarkActionBar</item>
+		<item>DeviceDefault.Light.NoActionBar</item>
+		<item>DeviceDefault.Light.NoActionBar.Fullscreen</item>
+		<item>Holo</item>
+		<item>Holo.NoActionBar</item>
+		<item>Holo.NoActionBar.Fullscreen</item>
+		<item>Holo.Light</item>
+		<item>Holo.Light.DarkActionBar</item>
+		<item>Holo.Light.NoActionBar</item>
+		<item>Holo.Light.NoActionBar.Fullscreen</item>
+		<item>Black</item>
+		<item>Black.NoTitleBar</item>
+		<item>Black.NoTitleBar.Fullscreen</item>
+		<item>Light</item>
+		<item>Light.NoTitleBar</item>
+		<item>Light.NoTitleBar.Fullscreen</item>
+		<item>Wallpaper</item>
+		<item>Wallpaper.NoTitleBar</item>
+		<item>Wallpaper.NoTitleBar.Fullscreen</item>
 	</string-array>
 
 </resources>

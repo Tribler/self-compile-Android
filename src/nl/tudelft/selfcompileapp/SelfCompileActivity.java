@@ -1,17 +1,19 @@
 package nl.tudelft.selfcompileapp;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -45,8 +47,6 @@ public class SelfCompileActivity extends Activity {
 
 	static final int REQ_APP_ICON = 1;
 	static final int REQ_APP_INFO = 2;
-	static final int ICON_WIDTH = 150;
-	static final int ICON_HEIGHT = 150;
 
 	UserInputFragment userInput;
 	TaskManagerFragment taskManager;
@@ -137,19 +137,20 @@ public class SelfCompileActivity extends Activity {
 
 			fm.beginTransaction().add(userInput, UserInputFragment.class.getSimpleName()).commit();
 
-			// Default app name
-			userInput.setAppName(getString(R.string.appName));
+			// Default name
+			userInput.appName = getString(R.string.appName);
 
-			// Default app icon
-			userInput.setAppIcon(BitmapFactory.decodeResource(getResources(), R.drawable.app_icon));
+			// Default icon
+			userInput.appIcon = BitmapFactory.decodeResource(getResources(), R.drawable.app_icon);
 
-			// Default app theme
-			// TODO
+			// Default theme
+			userInput.appTheme = "Theme." + getResources().getStringArray(R.array.appThemes)[0];
 
-			// Default app package
-			userInput.setAppPackage(getApplicationContext().getPackageName());
+			// Default package
+			userInput.appPackage = getApplicationContext().getPackageName();
 		}
 
+		// Restore previous user input
 		try {
 			setTheme(userInput.getAppThemeId());
 
@@ -177,7 +178,7 @@ public class SelfCompileActivity extends Activity {
 
 		// Restore previous user input
 		txtAppName.setText(userInput.getAppName());
-		btnAppIcon.setImageBitmap(userInput.getAppIcon());
+		btnAppIcon.setImageBitmap(userInput.getAppIcon(getApplicationContext()));
 		spnAppTheme.setSelection(
 				Arrays.asList(getResources().getStringArray(R.array.appThemes)).indexOf(userInput.getAppTheme()));
 		txtAppPackage.setText(userInput.getAppPackage());
@@ -211,7 +212,7 @@ public class SelfCompileActivity extends Activity {
 				spnAppTheme.setOnItemSelectedListener(new OnItemSelectedListener() {
 
 					public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-						userInput.setAppTheme(getResources().getStringArray(R.array.appThemes)[position]);
+						userInput.setAppTheme("Theme." + getResources().getStringArray(R.array.appThemes)[position]);
 						recreate();
 					}
 
@@ -288,10 +289,11 @@ public class SelfCompileActivity extends Activity {
 				try {
 					Uri uriImg = returnedIntent.getData();
 					InputStream is = getContentResolver().openInputStream(uriImg);
-
-					Bitmap icon = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(is), ICON_WIDTH, ICON_HEIGHT,
-							false);
+					Bitmap b = BitmapFactory.decodeStream(is);
+					Bitmap icon = Bitmap.createScaledBitmap(b, ModifyDrawables.XXHDPI_ICON_PIXELS,
+							ModifyDrawables.XXHDPI_ICON_PIXELS, false);
 					is.close();
+					icon.recycle();
 
 					userInput.setAppIcon(icon);
 
@@ -341,10 +343,10 @@ public class SelfCompileActivity extends Activity {
  */
 class UserInputFragment extends Fragment {
 
-	private String appName;
-	private Bitmap appIcon;
-	private String appPackage;
-	private String appTheme;
+	String appName;
+	Bitmap appIcon;
+	String appPackage;
+	String appTheme;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -352,35 +354,68 @@ class UserInputFragment extends Fragment {
 		setRetainInstance(true);
 	}
 
-	String getAppName() {
-		if (S.xmlStrings.exists()) {
-			try {
-				Document strings = Util.readXml(S.xmlStrings);
-				System.out.println(strings.getDocumentElement().getFirstChild().getTextContent());
+	////////////////// GETTERS ////////////////////
 
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+	Bitmap getAppIcon(Context appContext) {
+		try {
+			InputStream is = appContext.getAssets().open(S.pngAppIcon.getName());
+			Bitmap b = BitmapFactory.decodeStream(is);
+			appIcon = Bitmap.createScaledBitmap(b, ModifyDrawables.XXHDPI_ICON_PIXELS,
+					ModifyDrawables.XXHDPI_ICON_PIXELS, false);
+			is.close();
+			b.recycle();
+
+			System.out.println("Icon: assets/" + S.pngAppIcon.getName());
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		return appName;
-	}
-
-	Bitmap getAppIcon() {
-		// TODO: Read from res/drawable-...
-
 		return appIcon;
 	}
 
+	String getAppName() {
+		try {
+			Document dom = Util.readXml(S.xmlStrings);
+			appName = dom.getElementsByTagName("string").item(0).getTextContent();
+
+			System.out.println("Name: " + appName);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		// Set name of the final output file
+		S.apkRedistributable = new File(S.dirRoot, appName + ".apk");
+
+		return appName;
+	}
+
 	String getAppTheme() {
-		// TODO: Read from values-.../styles.xml
+		try {
+			Document dom = Util.readXml(S.xmlStyles);
+
+			NodeList lstNode = dom.getElementsByTagName("style");
+			for (int i = 0; i < lstNode.getLength(); i++) {
+				Node node = lstNode.item(i);
+
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element elmnt = (Element) node;
+					appTheme = elmnt.getAttribute("parent").replace("android:", "");
+
+					System.out.println("Theme: " + appTheme);
+					break;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		return appTheme;
 	}
 
 	Integer getAppThemeId() throws Exception {
-		String fieldName = appTheme.replace("android:", "").replace(".", "_");
-
-		System.out.println(fieldName); // DEBUG
+		String fieldName = appTheme.replace(".", "_");
+		System.out.println("android.R.style." + fieldName);
 
 		Field f = android.R.style.class.getField(fieldName);
 		Class<?> t = f.getType();
@@ -391,46 +426,54 @@ class UserInputFragment extends Fragment {
 	}
 
 	String getAppPackage() {
-		// TODO: Read from manifest.xml
+		try {
+			Document dom = Util.readXml(S.xmlMan);
+			appPackage = dom.getDocumentElement().getAttributes().getNamedItem("package").getNodeValue();
 
+			System.out.println("Package: " + appPackage);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return appPackage;
+	}
+
+	////////////////// SETTERS ////////////////////
+
+	void setAppIcon(Bitmap icon) {
+		appIcon = icon;
+
+		if (isAdded()) {
+			SelfCompileActivity activity = (SelfCompileActivity) getActivity();
+			activity.taskManager.modifyDrawables(activity, null);
+		}
 	}
 
 	void setAppName(String name) {
 		appName = name;
 
-		// Set name of the final output file
-		S.apkRedistributable = new File(S.dirRoot, appName + ".apk");
-
-		// TODO: Write to strings.xml
-	}
-
-	void setAppIcon(Bitmap icon) {
-		appIcon = icon;
-
-		// Write to assets dir
-		try {
-			FileOutputStream pngIcon = new FileOutputStream(S.pngAppIcon);
-			appIcon.compress(Bitmap.CompressFormat.PNG, 100, new BufferedOutputStream(pngIcon));
-			pngIcon.close();
-
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		if (isAdded()) {
+			SelfCompileActivity activity = (SelfCompileActivity) getActivity();
+			activity.taskManager.modifyStrings(activity, null);
 		}
-
-		// TODO: Write to all res/drawable-...
 	}
 
 	void setAppTheme(String theme) {
 		appTheme = theme;
 
-		// TODO: Write to all values-.../styles.xml
+		if (isAdded()) {
+			SelfCompileActivity activity = (SelfCompileActivity) getActivity();
+			activity.taskManager.modifyStyles(activity, null);
+		}
 	}
 
 	void setAppPackage(String packagePath) {
 		appPackage = packagePath;
 
-		// TODO: Write to manifest.xml
+		if (isAdded()) {
+			SelfCompileActivity activity = (SelfCompileActivity) getActivity();
+			activity.taskManager.modifySource(activity, null);
+		}
 	}
 
 }
@@ -511,15 +554,6 @@ class TaskManagerFragment extends Fragment implements Handler.Callback {
 
 	//////////////////// TASKS ////////////////////
 
-	void startClean(SelfCompileActivity activity, Intent done) {
-		if (isIdle()) {
-			activity.updateGui(false);
-			this.done = done;
-			runningTask = new Thread(new CleanTask(activity.getApplicationContext(), listener));
-			runningTask.start();
-		}
-	}
-
 	void cancelTask(SelfCompileActivity activity, Intent done) {
 		if (!isIdle()) {
 			strStatus = activity.getString(R.string.stsCancel);
@@ -529,11 +563,57 @@ class TaskManagerFragment extends Fragment implements Handler.Callback {
 		}
 	}
 
+	void startClean(SelfCompileActivity activity, Intent done) {
+		if (isIdle()) {
+			activity.updateGui(false);
+			this.done = done;
+			runningTask = new Thread(new CleanTask(activity.userInput, activity.getApplicationContext(), listener));
+			runningTask.start();
+		}
+	}
+
+	void modifyDrawables(SelfCompileActivity activity, Intent done) {
+		if (isIdle()) {
+			activity.updateGui(false);
+			this.done = done;
+			runningTask = new Thread(
+					new ModifyDrawables(activity.userInput, activity.getApplicationContext(), listener));
+			runningTask.start();
+		}
+	}
+
+	void modifyStrings(SelfCompileActivity activity, Intent done) {
+		if (isIdle()) {
+			activity.updateGui(false);
+			this.done = done;
+			runningTask = new Thread(new ModifyStrings(activity.userInput, activity.getApplicationContext(), listener));
+			runningTask.start();
+		}
+	}
+
+	void modifyStyles(SelfCompileActivity activity, Intent done) {
+		if (isIdle()) {
+			activity.updateGui(false);
+			this.done = done;
+			runningTask = new Thread(new ModifyStyles(activity.userInput, activity.getApplicationContext(), listener));
+			runningTask.start();
+		}
+	}
+
+	void modifySource(SelfCompileActivity activity, Intent done) {
+		if (isIdle()) {
+			activity.updateGui(false);
+			this.done = done;
+			runningTask = new Thread(new ModifySource(activity.userInput, activity.getApplicationContext(), listener));
+			runningTask.start();
+		}
+	}
+
 	void startBuild(SelfCompileActivity activity, Intent done) {
 		if (isIdle()) {
 			activity.updateGui(false);
 			this.done = done;
-			runningTask = new Thread(new BuildTask(activity.getApplicationContext(), listener));
+			runningTask = new Thread(new BuildTask(activity.userInput, activity.getApplicationContext(), listener));
 			runningTask.start();
 		}
 	}

@@ -1,4 +1,4 @@
-package nl.tudelft.selfcompileapp;
+package com.arn.tom;
 
 import java.io.*;
 
@@ -45,7 +45,7 @@ public class Aapt {
 		LineNumberReader lnr;
 		String st = "";
 		try {
-			lnr = new LineNumberReader(new FileReader(S.txtOut));
+			lnr = new LineNumberReader(new FileReader("/storage/emulated/0/.AaptJNI/native_stdout.txt"));
 			st = "";
 			while (st != null) {
 				st = lnr.readLine();
@@ -53,7 +53,7 @@ public class Aapt {
 					System.out.println(st);
 			}
 			lnr.close();
-			lnr = new LineNumberReader(new FileReader(S.txtErr));
+			lnr = new LineNumberReader(new FileReader("/storage/emulated/0/.AaptJNI/native_stderr.txt"));
 			st = "";
 			while (st != null) {
 				st = lnr.readLine();

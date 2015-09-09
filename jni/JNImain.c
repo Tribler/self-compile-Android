@@ -3,8 +3,7 @@
 #include <stdio.h>
 #include <android/log.h>
 
-jint Java_nl_tudelft_selfcompileapp_Aapt_JNImain(JNIEnv * env, jobject this,
-		jstring args) {
+jint Java_com_arn_tom_Aapt_JNImain(JNIEnv * env, jobject this, jstring args) {
 
 	jboolean isCopy;
 	const char * szArgs = (*env)->GetStringUTFChars(env, args, &isCopy);
@@ -33,8 +32,8 @@ jint Java_nl_tudelft_selfcompileapp_Aapt_JNImain(JNIEnv * env, jobject this,
 	argv[idx] = ptr1;
 
 	// redirect stderr and stdout
-	freopen("/storage/emulated/0/.JNImain/native_stderr.txt", "w", stderr);
-	freopen("/storage/emulated/0/.JNImain/native_stdout.txt", "w", stdout);
+	freopen("/storage/emulated/0/.AaptJNI/native_stderr.txt", "w", stderr);
+	freopen("/storage/emulated/0/.AaptJNI/native_stdout.txt", "w", stdout);
 
 	fprintf(stdout, "Aapt arguments:\n");
 	for (i = 1; i < argc; i++) {
