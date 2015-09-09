@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 
 import org.w3c.dom.Document;
@@ -86,22 +87,6 @@ public class SelfCompileActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_self_compile);
-
-		frmChange = findViewById(R.id.frmChange);
-		btnMimicApp = (Button) findViewById(R.id.btnMimicApp);
-		btnAppIcon = (ImageView) findViewById(R.id.btnAppIcon);
-		txtAppName = (EditText) findViewById(R.id.txtAppName);
-		spnAppTheme = (Spinner) findViewById(R.id.spnAppTheme);
-		txtAppPackage = (EditText) findViewById(R.id.txtAppPackage);
-		lblStatus = (TextView) findViewById(R.id.lblStatus);
-		prbProgress = (ProgressBar) findViewById(R.id.prbProgress);
-		prbSpinner = (ProgressBar) findViewById(R.id.prbSpinner);
-		btnReset = (Button) findViewById(R.id.btnReset);
-		btnCancel = (Button) findViewById(R.id.btnCancel);
-		btnInstall = (Button) findViewById(R.id.btnInstall);
-
-		S.mkDirs();
 
 		initTaskManager();
 		initUserInput();
@@ -110,9 +95,7 @@ public class SelfCompileActivity extends Activity {
 			initNfc();
 		}
 
-		// Set current working state
-		updateGui(taskManager.isIdle());
-
+		// Reset on first run
 		if (!S.dirProj.exists()) {
 			btnReset(btnReset);
 		}
@@ -140,6 +123,8 @@ public class SelfCompileActivity extends Activity {
 
 			fm.beginTransaction().add(taskManager, TaskManagerFragment.class.getSimpleName()).commit();
 		}
+
+		S.mkDirs();
 	}
 
 	private void initUserInput() {
@@ -158,22 +143,43 @@ public class SelfCompileActivity extends Activity {
 			// Default app icon
 			userInput.setAppIcon(BitmapFactory.decodeResource(getResources(), R.drawable.app_icon));
 
-			// Default app package
-			userInput.setAppPackage(getPackageName());
-
 			// Default app theme
-			userInput.setAppTheme(getTheme().toString());
+			// TODO
+
+			// Default app package
+			userInput.setAppPackage(getApplicationContext().getPackageName());
 		}
+
+		try {
+			setTheme(userInput.getAppThemeId());
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		setContentView(R.layout.activity_self_compile);
+
+		frmChange = findViewById(R.id.frmChange);
+		btnMimicApp = (Button) findViewById(R.id.btnMimicApp);
+		btnAppIcon = (ImageView) findViewById(R.id.btnAppIcon);
+		txtAppName = (EditText) findViewById(R.id.txtAppName);
+		spnAppTheme = (Spinner) findViewById(R.id.spnAppTheme);
+		txtAppPackage = (EditText) findViewById(R.id.txtAppPackage);
+		lblStatus = (TextView) findViewById(R.id.lblStatus);
+		prbProgress = (ProgressBar) findViewById(R.id.prbProgress);
+		prbSpinner = (ProgressBar) findViewById(R.id.prbSpinner);
+		btnReset = (Button) findViewById(R.id.btnReset);
+		btnCancel = (Button) findViewById(R.id.btnCancel);
+		btnInstall = (Button) findViewById(R.id.btnInstall);
+
+		// Set current working state
+		updateGui(taskManager.isIdle());
 
 		// Restore previous user input
 		txtAppName.setText(userInput.getAppName());
 		btnAppIcon.setImageBitmap(userInput.getAppIcon());
-
 		spnAppTheme.setSelection(
 				Arrays.asList(getResources().getStringArray(R.array.appThemes)).indexOf(userInput.getAppTheme()));
-
-		setTheme(android.R.style.Theme_Holo_Light); // DEBUG
-
 		txtAppPackage.setText(userInput.getAppPackage());
 
 		// Handle app icon change
@@ -197,15 +203,23 @@ public class SelfCompileActivity extends Activity {
 		});
 
 		// Handle app theme change
-		spnAppTheme.setOnItemSelectedListener(new OnItemSelectedListener() {
+		/**
+		 * @source http://stackoverflow.com/a/9375624
+		 */
+		spnAppTheme.post(new Runnable() {
+			public void run() {
+				spnAppTheme.setOnItemSelectedListener(new OnItemSelectedListener() {
 
-			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-				userInput.setAppTheme(getResources().getStringArray(R.array.appThemes)[position]);
+					public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+						userInput.setAppTheme(getResources().getStringArray(R.array.appThemes)[position]);
+						recreate();
+					}
+
+					public void onNothingSelected(AdapterView<?> parent) {
+					}
+
+				});
 			}
-
-			public void onNothingSelected(AdapterView<?> parent) {
-			}
-
 		});
 
 		// Handle app package change
@@ -222,6 +236,7 @@ public class SelfCompileActivity extends Activity {
 			}
 
 		});
+
 	}
 
 	//////////////////// ON CLICK BUTTONS ////////////////////
@@ -356,16 +371,29 @@ class UserInputFragment extends Fragment {
 		return appIcon;
 	}
 
-	String getAppPackage() {
-		// TODO: Read from manifest.xml
-
-		return appPackage;
-	}
-
 	String getAppTheme() {
 		// TODO: Read from values-.../styles.xml
 
 		return appTheme;
+	}
+
+	Integer getAppThemeId() throws Exception {
+		String fieldName = appTheme.replace("android:", "").replace(".", "_");
+
+		System.out.println(fieldName); // DEBUG
+
+		Field f = android.R.style.class.getField(fieldName);
+		Class<?> t = f.getType();
+		if (t == int.class) {
+			return f.getInt(null);
+		}
+		return null;
+	}
+
+	String getAppPackage() {
+		// TODO: Read from manifest.xml
+
+		return appPackage;
 	}
 
 	void setAppName(String name) {
@@ -393,14 +421,16 @@ class UserInputFragment extends Fragment {
 		// TODO: Write to all res/drawable-...
 	}
 
-	void setAppPackage(String packagePath) {
-		// TODO: Write to manifest.xml
-	}
-
 	void setAppTheme(String theme) {
 		appTheme = theme;
 
 		// TODO: Write to all values-.../styles.xml
+	}
+
+	void setAppPackage(String packagePath) {
+		appPackage = packagePath;
+
+		// TODO: Write to manifest.xml
 	}
 
 }
