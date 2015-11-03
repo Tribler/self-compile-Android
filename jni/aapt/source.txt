@@ -1,0 +1,3 @@
+http://android.git.kernel.org/
+
+[platform/frameworks/base.git] / tools / aapt / Android.mk

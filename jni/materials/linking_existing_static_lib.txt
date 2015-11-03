@@ -1,0 +1,1 @@
+http://android-jotting.blogspot.com/2010/08/compile-static-library-only-using-ndk.html

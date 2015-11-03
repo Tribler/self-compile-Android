@@ -1,0 +1,1076 @@
+<html>
+<head>
+<title> Basic Types, Strings, and Arrays</title>
+<meta name="collection" content="reference">
+</head>
+<body BGCOLOR=#eeeeff text=#000000 LINK=#0000ff VLINK=#000077 ALINK=#ff0000>
+ 
+<table border="0" width="100%">
+<tr>
+<td><a href="jniTOC.html">Contents</a> | <a href="part2.html">Prev</a> | <a href="fldmeth.html">Next</a> | <a href="jniIX.html">Index</a></td>
+<td align=right><i>The Java Native Interface<br>
+Programmer's Guide and Specification</i>
+</td></tr></table>
+http://java.sun.com/docs/books/jni/html/objtypes.html
+<hr><br>
+ 
+<div align="right">
+<h1 align="left">
+  <a name="11201"> </a><font color="#663300" face="Arial, Verdana, Helvetica, sans-serif">Chapter 3 chapter</font>
+</h1>
+</div>
+<a name="11202"></a>
+<h1>Basic Types, Strings, and Arrays</h1>
+<hr><p>
+
+<p>
+  <a name="11203"> </a>One of the most common questions programmers ask when interfacing Java applications with native code is how data types in the Java programming language map to the data types in native programming languages such as C and C++. In the "Hello World!" example presented in the last chapter, we did not pass any arguments to the native method, nor did the native method return any result. The native method simply printed a message and returned.</font>
+</p>
+
+
+<p>
+  <a name="27652"> </a>In practice, most programs will need to pass arguments to native methods, and receive results from native methods as well. In this chapter, we will describe how to exchange data types between code written in the Java programming language and the native code that implements native methods. We will start with primitive types such as integers and common object types such as strings and arrays. We will defer the full treatment of arbitrary objects to the next chapter, where we will explain how the native code can access fields and make method calls.</font>
+</p>
+
+<a name="24512"></a>
+<h2>3.1    A Simple Native Method</h2>
+
+<p>
+  <a name="1123"> </a>Let us start with a simple example that is not too different from the <code>HelloWorld</code> program in the last chapter. The example program, <code>Prompt.java</code>, contains a native method that prints a string, waits for user input, and then returns the line that the user has typed in. The source code for this program is as follows:</font>
+</p>
+
+
+<p>
+  <a name="49742"> </a></font>
+</p>
+
+
+<p>
+  <a name="49743"> </a></font>
+</p>
+
+
+<p>
+  <a name="49744"> </a></font>
+</p>
+
+
+<p>
+  <a name="49745"> </a></font>
+</p>
+
+
+<p>
+  <a name="49746"> </a></font>
+</p>
+
+
+<p>
+  <a name="49747"> </a></font>
+</p>
+
+<pre>
+<a name="3846"> </a>class Prompt {
+<a name="28527"> </a>    // native method that prints a prompt and reads a line
+<a name="3848"> </a>    private native String getLine(String prompt);
+<a name="28528"> </a>
+<a name="3849"> </a>    public static void main(String args[]) {
+<a name="3850"> </a>        Prompt p = new Prompt();
+<a name="3851"> </a>        String input = p.getLine("Type a line: ");
+<a name="3852"> </a>        System.out.println("User typed: " + input);
+<a name="3853"> </a>    }
+<a name="3854"> </a>    static {
+<a name="3855"> </a>        System.loadLibrary("Prompt");
+<a name="3856"> </a>    }
+<a name="3857"> </a>}
+</pre>
+
+<p>
+  <a name="28370"> </a><code>Prompt.main</code> calls the native method <code>Prompt.getLine</code> to receive user input. The static initializer calls the <code>System.loadLibrary</code> method to load a native library called <code>Prompt</code>.</font>
+</p>
+
+<a name="1254"></a>
+<h3>3.1.1    C Prototype for Implementing the Native Method</h3>
+
+<p>
+  <a name="1256"> </a>The <code>Prompt.getLine</code> method can be implemented with the following C function:</font>
+</p>
+
+<pre>
+<a name="3882"> </a>JNIEXPORT jstring JNICALL 
+<a name="5125"> </a>Java_Prompt_getLine(JNIEnv *env, jobject this, jstring prompt);
+</pre>
+
+<p>
+  <a name="6123"> </a>You can use the <code>javah</code> tool (<a href="start.html#1309">&#167;2.4</a>) to generate a header file containing the above function prototype. The <code>JNIEXPORT</code> and <code>JNICALL</code> macros (defined in the <code>jni.h</code> header file) ensure that this function is exported from the native library and C compilers generate code with the correct calling convention for this function. The name of the C function is formed by concatenating the "<code>Java_</code>" prefix, the class name, and the method name. Section <a href="design.html#9984">11.3</a> contains a more precise description of how the C function names are formed.</font>
+</p>
+
+<a name="5190"></a>
+<h3>3.1.2    Native Method Arguments</h3>
+
+<p>
+  <a name="5142"> </a>As briefly discussed in Section <a href="start.html#1309">2.4</a>, the native method implementation such as <code>Java_Prompt_getLine</code> accepts two standard parameters, in addition to the arguments declared in the native method. The first parameter, the <code>JNIEnv</code> interface pointer, points to a location that contains a pointer to a function table. Each entry in the function table points to a <em>JNI function</em>. Native methods always access data structures in the Java virtual machine through one of the JNI functions. Figure <a href="objtypes.html#3752">3.1</a> illustrates the <code>JNIEnv</code> interface pointer. </font>
+</p>
+
+
+<p>
+  <a name="3663"> </a><img src="objtypesa.gif" height="198" width="470" align="center" border="0" hspace="0" vspace="0">
+</font>
+</p>
+
+<a name="3752"> </a><b>Figure 3.1	</b>&nbsp;&nbsp;The <code>JNIEnv</code> Interface Pointer</font><p>
+<p>
+  <a name="5196"> </a>The second argument differs depending on whether the native method is a static or an instance method. The second argument to an <font  size="2" face="Arial, Verdana, Helvetica, sans-serif">instance</font> native method is a reference to the object on which the method is invoked, similar to the <code>this</code> pointer in C++. The second argument to a <font  size="2" face="Arial, Verdana, Helvetica, sans-serif">static</font> native method is a reference to the class in which the method is defined. Our example, <code>Java_Prompt_getLine</code>, implements an instance native method. Thus the <code>jobject</code> parameter is a reference to the object itself.</font>
+</p>
+
+<a name="12527"></a>
+<h3>3.1.3    Mapping of Types</h3>
+
+<p>
+  <a name="28916"> </a>Argument types in the native method declaration have corresponding types in native programming languages. The JNI defines a set of C and C++ types that correspond to types in the Java programming language.</font>
+</p>
+
+
+<p>
+  <a name="30918"> </a>There are two kinds of types in the Java programming language: <em>primitive types</em> such as <code>int</code>, <code>float</code>, and <code>char</code>, and <em>reference types </em>such as classes, instances, and arrays. In the Java programming language, strings are instances of the <code>java.lang.String</code> class.</font>
+</p>
+
+
+<p>
+  <a name="26486"> </a>The JNI treats primitive types and reference types differently. The mapping of primitive types is straightforward. For example, the type <code>int</code> in the Java programming language maps to the C/C++ type <code>jint</code> (defined in <code>jni.h</code> as a signed 32-bit integer), while the type <code>float</code> in the Java programming language maps to the C and C++ type <code>jfloat</code> (defined in <code>jni.h</code> as a 32-bit floating point number). Section <a href="types.html#63977">12.1.1</a> contains the definition of all primitive types defined in the JNI.</font>
+</p>
+
+
+<p>
+  <a name="2462"> </a>The JNI passes objects to native methods as <em>opaque references</em>. Opaque references are C pointer types that refer to internal data structures in the Java virtual machine. The exact layout of the internal data structures, however, is hidden from the programmer. The native code must manipulate the underlying objects via the appropriate JNI functions, which are available through the <code>JNIEnv</code> interface pointer. For example, the corresponding JNI type for <code>java.lang.String</code> is <code>jstring</code>. The exact value of a <code>jstring</code> reference is irrelevant to the native code. The native code calls JNI functions such as <code>GetStringUTFChars</code> <a href="objtypes.html#4013">(&#167;3.2.1)</a> to access the contents of a string.</font>
+</p>
+
+
+<p>
+  <a name="8259"> </a>All JNI references have type <code>jobject</code>. For convenience and enhanced type safety, the JNI defines a set of reference types that are conceptually "subtypes" of <code>jobject</code>. (<font  size="2" face="Arial, Verdana, Helvetica, sans-serif">A</font> is a subtype of <font  size="2" face="Arial, Verdana, Helvetica, sans-serif">B</font> of every instance of <font  size="2" face="Arial, Verdana, Helvetica, sans-serif">A</font> is also an instance of <font  size="2" face="Arial, Verdana, Helvetica, sans-serif">B</font>.) These subtypes correspond to frequently used reference types in the Java programming language. For example, <code>jstring</code> denotes strings; <code>jobjectArray</code> denotes an array of objects. Section <a href="types.html#58808">12.1.2</a> contains a complete listing of the JNI reference types and their subtyping relationships. </font>
+</p>
+
+<a name="4001"></a>
+<h2>3.2    Accessing Strings</h2>
+
+<p>
+  <a name="4002"> </a>The <code>Java_Prompt_getLine</code> function receives the <code>prompt</code> argument as a <code>jstring </code>type. The <code>jstring</code> type represents strings in the Java virtual machine, and is different from the regular C string type (a pointer to characters, <code>char *</code>). You cannot use a <code>jstring</code> as a normal C string. The following code, if run, would not produce the desired results. In fact, it will most likely crash the Java virtual machine.</font>
+</p>
+
+<pre>
+<a name="4007"> </a>JNIEXPORT jstring JNICALL
+<a name="4008"> </a>Java_Prompt_getLine(JNIEnv *env, jobject obj, jstring prompt)
+<a name="4009"> </a>{
+<a name="31076"> </a>    /* ERROR: incorrect use of jstring as a char* pointer */
+<a name="4010"> </a>    printf("%s", prompt);
+<a name="5223"> </a>    ...
+<a name="5224"> </a>}
+</pre>
+<a name="4013"></a>
+<h3>3.2.1    Converting to Native Strings</h3>
+
+<p>
+  <a name="4014"> </a>Your native method code must use the appropriate JNI functions to convert <code>jstring</code> objects to C/C++ strings. The JNI supports conversion both to and from Unicode and UTF-8 strings. Unicode strings represent characters as 16-bit values, whereas UTF-8 strings <a href="types.html#58973">(&#167;12.3.1)</a> use an encoding scheme that is upward compatible with 7-bit ASCII strings. UTF-8 strings act like <code>NULL</code>-terminated C strings, even if they contain non-ASCII characters. All 7-bit ASCII characters whose values are between 1 and 127 remain the same in the UTF-8 encoding. A byte with the highest bit set signals the beginning of a multi-byte encoded 16-bit Unicode value.</font>
+</p>
+
+
+<p>
+  <a name="4015"> </a>The <code>Java_Prompt_getLine</code> function calls the JNI function <code>GetStringUTFChars</code> to read the contents of the string. The <code>GetStringUTFChars</code> function is available through the <code>JNIEnv</code> interface pointer. It converts the <code>jstring</code> reference, typically represented by the Java virtual machine implementation as a Unicode sequence, into a C string represented in the UTF-8 format. If you are certain that the original string contains only 7-bit ASCII characters, you may pass the converted string to regular C library functions such as <code>printf</code>. (We will discuss how to handle non-ASCII strings in Section <a href="other.html#26018">8.2</a>.)</font>
+</p>
+
+<pre>
+<a name="4022"> </a>JNIEXPORT jstring JNICALL 
+<a name="5226"> </a>Java_<code>Prompt</code>_getLine(JNIEnv *env, jobject obj, jstring prompt)
+<a name="4023"> </a>{
+<a name="4024"> </a>    char buf[128];
+<a name="4025"> </a>    const jbyte *str;
+<a name="30992"> </a>    str = (*env)-&gt;GetStringUTFChars(env, prompt, NULL);
+<a name="5225"> </a>    if (str == NULL) {
+<a name="34470"> </a>        return NULL; /* OutOfMemoryError already thrown */
+<a name="5229"> </a>    }
+<a name="4026"> </a>    printf("%s", str);
+<a name="4027"> </a>    (*env)-&gt;ReleaseStringUTFChars(env, prompt, str);
+<a name="30984"> </a>    /* We assume here that the user does not type more than
+<a name="30985"> </a>     * 127 characters */
+<a name="4028"> </a>    scanf("%s", buf);
+<a name="4029"> </a>    return (*env)-&gt;NewStringUTF(env, buf);
+<a name="4030"> </a>}
+</pre>
+
+<p>
+  <a name="26193"> </a>Do not forget to check the return value of <code>GetStringUTFChars</code>. Because the Java virtual machine implementation needs to allocate memory to hold the UTF-8 string, there is a chance that memory allocation will fail. When that happens, <code>GetStringUTFChars</code> returns <code>NULL</code> and throws an <code>OutOfMemoryError</code> exception. As we will learn in Chapter <a href="exceptions.html#11201">6</a>, throwing an exception through the JNI is different from throwing an exception in the Java programming language. A pending exception thrown through the JNI does not automatically change control flow in native C code. Instead, we need to issue an explicit <code>return</code> statement in order to skip the remaining statements in the C function. After <code>Java_Prompt_getLine</code> returns, the exception will be thrown in <code>Prompt.main</code>, caller of the <code>Prompt.getLine</code> native method.</font>
+</p>
+
+<a name="4033"></a>
+<h3>3.2.2    Freeing Native String Resources</h3>
+
+<p>
+  <a name="4034"> </a>When your native code finishes using the UTF-8 string obtained through <code>GetStringUTFChars</code>, it calls <code>ReleaseStringUTFChars</code>. Calling <code>ReleaseString-UTFChars</code> indicates that the native method no longer needs the UTF-8 string returned by <code>GetStringUTFChars</code>; thus the memory taken by the UTF-8 string can be freed. Failure to call <code>ReleaseStringUTFChars</code> would result in a memory leak, which could ultimately lead to memory exhaustion.</font>
+</p>
+
+<a name="4035"></a>
+<h3>3.2.3    Constructing New Strings</h3>
+
+<p>
+  <a name="4036"> </a>You can construct a new <code>java.lang.String</code> instance in the native method by calling the JNI function <code>NewStringUTF</code>. The <code>NewStringUTF</code> function takes a C string with the UTF-8 format and constructs a <code>java.lang.String</code> instance. The newly constructed <code>java.lang.String</code> instance represents the same sequence of Unicode characters as the given UTF-8 C string.</font>
+</p>
+
+
+<p>
+  <a name="26404"> </a>If the virtual machine cannot allocate the memory needed to construct the <code>java.lang.String</code> instance, <code>NewStringUTF</code> throws an <code>OutOfMemoryError</code> exception and returns <code>NULL</code>. In this example, we do not need to check its return value because the native method returns immediately afterwards. If <code>NewString-UTF</code> fails, the <code>OutOfMemoryError</code> exception will be thrown in the <code>Prompt.main</code> method that issued the native method call. If <code>NewStringUTF</code> succeeds, it returns a JNI reference to the newly constructed <code>java.lang.String</code> instance. The new instance is returned by <code>Prompt.getLine</code> and then assigned to the local variable <code>input</code> in <code>Prompt.main</code>.</font>
+</p>
+
+<a name="5161"></a>
+<h3>3.2.4    Other JNI String Functions </h3>
+
+<p>
+  <a name="26521"> </a>The JNI supports a number of other string-related functions, in addition to the <code>GetStringUTFChars</code>, <code>ReleaseStringUTFChars</code>, and <code>NewStringUTF</code> functions introduced earlier.
+</p>
+
+
+<p>
+  <a name="26457"> </a><code>GetStringChars</code> and <code>ReleaseStringChars</code> obtain string characters represented in the Unicode format. These functions are useful when, for example, the operating system supports Unicode as the native string format. </font>
+</p>
+
+
+<p>
+  <a name="4047"> </a>UTF-8 strings are always terminated with the <code>`\0&#39;</code> character, whereas Unicode strings are not. To find out the number of Unicode characters in a <code>jstring</code> reference, JNI programmers can call <code>GetStringLength</code>. To find out how many bytes are needed to represent a <code>jstring</code> in the UTF-8 format, JNI programmers can either call the ANSI C function <code>strlen</code> on the result of <code>GetStringUTFChars</code>, or call the JNI function <code>GetStringUTFLength</code> on the <code>jstring</code> reference directly.</font>
+</p>
+
+
+<p>
+  <a name="26433"> </a>The third argument to <code>GetStringChars</code> and <code>GetStringUTFChars</code> requires additional explanation:</font>
+</p>
+
+<pre>
+<a name="26434"> </a>const jchar *
+<a name="26524"> </a>GetStringChars(JNIEnv *env, jstring str, jboolean *isCopy); 
+</pre>
+
+<p>
+  <a name="26436"> </a>Upon returning from <code>GetStringChars</code>, the memory location pointed to by <code>isCopy</code> will be set to <code>JNI_TRUE</code> if the returned string is a <code>copy</code> of the characters in the original <code>java.lang.String</code> instance. The memory location pointed to by <code>isCopy</code> will be set to <code>JNI_FALSE</code> if the returned string is a <code>direct</code> pointer to the characters in the original <code>java.lang.String</code> instance. <em>When the location pointed to by </em><code>isCopy</code> is set to <code>JNI_FALSE</code>, native code must not modify the contents of the returned string.</font> Violating this rule will cause the original <code>java.lang.String</code> instance to be modified as well. This breaks the invariant that <code>java.lang.String</code> instances are immutable.</font>
+</p>
+
+
+<p>
+  <a name="26437"> </a>Most often you pass <code>NULL</code> as the <code>isCopy</code> argument because you do not care whether the Java virtual machine returns a copy of the characters in the <code>java.lang.String</code> instance or a direct pointer to the original.</font>
+</p>
+
+
+<p>
+  <a name="26438"> </a>It is in general not possible to predict whether the virtual machine will copy the characters in a given <code>java.lang.String</code> instance. Programmers must therefore assume functions such as <code>GetStringChars</code> may take time and space proportional to the number of characters in the <code>java.lang.String</code> instance. In a typical Java virtual machine implementation, the garbage collector relocates objects in the heap. Once a direct pointer to a <code>java.lang.String</code> instance is passed back to the native code, the garbage collector can no longer relocate the <code>java.lang.String</code> instance. To put it another way, the virtual machine must <em>pin</em> the <code>java.lang.String</code> instance. Because excessive pinning leads to memory fragmentation, the virtual machine implementation may, at its discretion, decide to either copy the characters or pin the instance for each individual <code>GetStringChars</code> call.</font>
+</p>
+
+
+<p>
+  <a name="30925"> </a>Do not forget to call <code>ReleaseStringChars</code> when you no longer need access to the string elements returned from <code>GetStringChars</code>. The <code>ReleaseString-Chars</code> call is necessary whether <code>GetStringChars</code> has set <code>*isCopy</code> to <code>JNI_TRUE</code> or <code>JNI_FALSE</code>. <code>ReleaseStringChars</code> either frees the copy or unpins the instance, depending upon whether <code>GetStringChars</code> has returned a copy or not.</font>
+</p>
+
+<a name="30934"></a>
+<h3>3.2.5    New JNI String Functions in Java 2 SDK Release 1.2</h3>
+
+<p>
+  <a name="26439"> </a>To increase the possibility that the virtual machine is able to return a direct pointer to the characters in a <code>java.lang.String</code> instance, Java 2 SDK release 1.2 introduces a new pair of functions, <code>Get/ReleaseStringCritical</code>. On the surface, they appear to be similar to <code>Get/ReleaseStringChars</code> functions in that both return a pointer to the characters if possible; otherwise, a copy is made. <em>There are, however, significant restrictions on how these functions can be used.</em></font>
+</p>
+
+
+<p>
+  <a name="26440"> </a>You must treat the code inside this pair of functions as running in a "critical region." Inside a critical region, native code must not call arbitrary JNI functions, or any native function that may cause the current thread to block and wait for another thread running in the Java virtual machine. For example, the current thread must not wait for input on an I/O stream being written to by another thread.</font>
+</p>
+
+
+<p>
+  <a name="26441"> </a>These restrictions make it possible for the virtual machine to disable garbage collection when the native code is holding a direct pointer to string elements obtained via <code>GetStringCritical</code>. When garbage collection is disabled, any other threads that trigger garbage collection will be blocked as well. Native code between a <code>Get/ReleaseStringCritical</code> pair must not issue blocking calls or allocate new objects in the Java virtual machine.</font> Otherwise, the virtual machine may deadlock. Consider the following scenario:</font>
+</p>
+
+<a name="26531"> </a>
+<ul>
+<li>A garbage collection triggered by another thread cannot make progress until the current thread finishes the blocking call and reenables garbage collection.</font><a name="26534"> </a>
+<li>Meanwhile, the current thread cannot make progress because the blocking call needs to obtain a lock already held by the other thread that is waiting to perform the garbage collection.</font>
+</ul>
+<p>
+  <a name="26442"> </a>It is safe to overlap multiple pairs of <code>GetStringCritical</code> and <code>Release-StringCritical</code> functions. For example:</font>
+</p>
+
+<pre>
+<a name="26443"> </a>jchar *s1, *s2;
+<a name="26444"> </a>s1 = (*env)-&gt;GetStringCritical(env, jstr1);
+<a name="26445"> </a>if (s1 == NULL) {
+<a name="26446"> </a>    ... /* error handling */
+<a name="26447"> </a>}
+<a name="26448"> </a>s2 = (*env)-&gt;GetStringCritical(env, jstr2);
+<a name="26449"> </a>if (s2 == NULL) {
+<a name="26450"> </a>    (*env)-&gt;ReleaseStringCritical(env, jstr1, s1);
+<a name="26451"> </a>    ... /* error handling */
+<a name="26452"> </a>}
+<a name="26453"> </a>...     /* use s1 and s2 */
+<a name="34601"> </a>(*env)-&gt;ReleaseStringCritical(env, jstr1, s1);
+<a name="34606"> </a>(*env)-&gt;ReleaseStringCritical(env, jstr2, s2);
+</pre>
+
+<p>
+  <a name="34613"> </a>The <code>Get/ReleaseStringCritical</code> pairs need not be strictly nested in a stack order. We must not forget to check its return value against <code>NULL</code> for possible out of memory situations, because <code>GetStringCritical</code> might still allocate a buffer and make a copy of the array if the VM internally represents arrays in a different format. For example, the Java virtual machine may not store arrays contiguously. In that case, <code>GetStringCritical</code> must copy all the characters in the <code>jstring</code> instance in order to return a contiguous array of characters to the native code. </font>
+</p>
+
+
+<p>
+  <a name="27642"> </a>To avoid deadlocks, you must make sure that the native code does not call arbitrary JNI functions after it issues a <code>GetStringCritical</code> call and before it makes the corresponding <code>ReleaseStringCritical</code> call. The only JNI functions allowed in the "critical region" are overlapped <code>Get/ReleaseStringCritical</code> and <code>Get/ReleasePrimitiveArrayCritical</code> (<a href="objtypes.html#4099">&#167;3.3.2</a>) calls.</font>
+</p>
+
+
+<p>
+  <a name="31007"> </a>The JNI does not support <code>GetStringUTFCritical</code> and <code>ReleaseStringUTF-Critical</code> functions. Such functions would likely require the virtual machine to make a copy of the string, because virtual machines implementation almost certainly represent strings internally in the Unicode format.</font>
+</p>
+
+
+<p>
+  <a name="11238"> </a>Other additions to Java 2 SDK release 1.2 are <code>GetStringRegion</code> and <code>GetStringUTF-Region</code>. These functions copy the string elements into a preallocated buffer. The <code>Prompt.getLine</code> method may be reimplemented using <code>GetStringUTFRegion</code> as follows:</font>
+</p>
+
+<pre>
+<a name="27701"> </a>JNIEXPORT jstring JNICALL 
+<a name="27702"> </a>Java_<code>Prompt</code>_getLine(JNIEnv *env, jobject obj, jstring prompt)
+<a name="27703"> </a>{
+<a name="28587"> </a>    /* assume the prompt string and user input has less than 128
+<a name="30993"> </a>       characters */
+<a name="27704"> </a>    char outbuf[128], inbuf[128];
+<a name="27717"> </a>    int len = (*env)-&gt;GetStringLength(env, prompt);
+<a name="27718"> </a>    (*env)-&gt;GetStringUTFRegion(env, prompt, 0, len, outbuf);
+<a name="27705"> </a>    printf("%s", outbuf);
+<a name="27712"> </a>    scanf("%s", inbuf);
+<a name="27713"> </a>    return (*env)-&gt;NewStringUTF(env, inbuf);
+<a name="27714"> </a>}
+</pre>
+
+<p>
+  <a name="27734"> </a>The <code>GetStringUTFRegion</code> function takes a starting index and length, both counted as number of Unicode characters. The function also performs bounds checking, and raises <code>StringIndexOutOfBoundsException</code> if necessary. In the above code, we obtained the length from the string reference itself, and are thus certain that there will be no index overflow. (The above code, however, lacks the necessary checks to ensure that the prompt string contains less than 128 characters.)</font>
+</p>
+
+
+<p>
+  <a name="31133"> </a>The code is somewhat simpler than using <code>GetStringUTFChars</code>. Because <code>GetStringUTFRegion</code> performs no memory allocation, we need not check for possible out-of-memory conditions. (Again, the above code lacks the necessary checks to ensure that the user input contains less than 128 characters.)</font>
+</p>
+
+<a name="31126"></a>
+<h3>3.2.6    Summary of JNI String Functions</h3>
+
+<p>
+  <a name="27729"> </a><a href="objtypes.html#44100">Table 3.1</a> summarizes all string-related JNI functions. Java 2 SDK 1.2 release adds a number of new functions that enhance performance for certain string operations. The added functions support no new operations other than bringing performance improvements.</font>
+</p>
+
+<a name="44100"></a>
+<blockquote><i>Summary of JNI String Functions<p>
+<table border="1" bordercolorlight="#FFFFFF" bordercolordark="#000000"
+       cellpadding="5" cellspacing="0">
+  <caption ALIGN="left"><b><font face="Arial, Verdana, Helvetica, sans-serif" size="-1"></font></b></caption>
+  <tr bgcolor="#CCCCCC"><div align="center">
+    <th><font face="Arial, Verdana, Helvetica, sans-serif" color="#663300">
+<a name="26545"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JNI Function<br></font>
+
+</font></th>
+    <th><font face="Arial, Verdana, Helvetica, sans-serif" color="#663300">
+<a name="26547"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Description<br></font>
+
+</font></th>
+    <th><font face="Arial, Verdana, Helvetica, sans-serif" color="#663300">
+<a name="26598"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Since<br></font>
+
+</font></th>
+  </div></tr>
+  <tr>
+    <td>
+
+<a name="26549"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>GetStringChars</code><br></font>
+
+
+<a name="26625"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>ReleaseStringChars</code><br></font>
+
+</td>
+    <td>
+
+<a name="26551"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Obtains or releases a pointer to the contents of a string in Unicode format. May return a copy of the string.<br></font>
+
+</td>
+    <td>
+
+<a name="26600"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="26553"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>GetStringUTFChars</code><br></font>
+
+
+<a name="26626"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>ReleaseStringUTFChars</code><br></font>
+
+</td>
+    <td>
+
+<a name="26647"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Obtains or releases a pointer to the contents of a string in UTF-8 format. May return a copy of the string.<br></font>
+
+</td>
+    <td>
+
+<a name="26602"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="26795"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>GetStringLength</code><br></font>
+
+</td>
+    <td>
+
+<a name="26797"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Returns the number of Unicode characters in the string.<br></font>
+
+</td>
+    <td>
+
+<a name="26799"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="27373"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>GetStringUTFLength</code><br></font>
+
+</td>
+    <td>
+
+<a name="27375"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Returns the number of bytes needed (not including the trailing 0) to represent a string in the UTF-8 format.<br></font>
+
+</td>
+    <td>
+
+<a name="27377"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="27379"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>NewString</code><br></font>
+
+</td>
+    <td>
+
+<a name="27381"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Creates a <code>java.lang.String</code> instance that contains the same sequence of characters as the given Unicode C string.<br></font>
+
+</td>
+    <td>
+
+<a name="27383"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="26801"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>NewStringUTF</code><br></font>
+
+</td>
+    <td>
+
+<a name="27392"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Creates a <code>java.lang.String</code> instance that contains the same sequence of characters as the given UTF-8 encoded C string.<br></font>
+
+</td>
+    <td>
+
+<a name="26805"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="26557"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>GetStringCritical</code><br></font>
+
+
+<a name="26629"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>ReleaseStringCritical</code><br></font>
+
+</td>
+    <td>
+
+<a name="26559"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Obtains a pointer to the contents of a string in Unicode format. May return a copy of the string. Native code must not block between a pair of <code>Get/ReleaseStringCritical</code> calls.<br></font>
+
+</td>
+    <td>
+
+<a name="26604"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Java 2 SDK1.2<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="26561"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>GetStringRegion</code><br></font>
+
+
+<a name="26635"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>SetStringRegion</code><br></font>
+
+</td>
+    <td>
+
+<a name="26563"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Copies the contents of a string to or from a preallocated C buffer in the Unicode format.<br></font>
+
+</td>
+    <td>
+
+<a name="26606"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Java 2 SDK1.2<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="26565"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>GetStringUTFRegion</code><br></font>
+
+
+<a name="26812"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>SetStringUTFRegion</code><br></font>
+
+</td>
+    <td>
+
+<a name="26814"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Copies the content of a string to or from a preallocated C buffer in the UTF-8 format.<br></font>
+
+</td>
+    <td>
+
+<a name="26608"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Java 2 SDK1.2<br></font>
+
+</td>
+  </tr>
+</table>
+
+
+</p>
+<br></blockquote></i>
+<a name="26665"></a>
+<h3>3.2.7    Choosing among the String Functions</h3>
+
+<p>
+  <a name="26753"> </a>Figure <a href="objtypes.html#27333">3.2</a> illustrates how a programmer may choose among the string-related functions in JDK release 1.1 and Java 2 SDK release 1.2:</font>
+</p>
+
+
+<p>
+  <a name="26761"> </a>.<img src="objtypes2.gif" height="398" width="500" align="center" border="0" hspace="0" vspace="0">
+</font>
+</p>
+
+<a name="27333"> </a><b>Figure 3.2	</b>&nbsp;&nbsp;Choosing among the JNI String Functions</font><p>
+<p>
+  <a name="27334"> </a>If you are targeting 1.1 or both 1.1 and 1.2 releases, there is no choice other than <code>Get/ReleaseStringChars</code> and <code>Get/ReleaseStringUTFChars</code>.</font>
+</p>
+
+
+<p>
+  <a name="27322"> </a>If you are programming in Java 2 SDK release 1.2 and above, and you want to copy the contents of a string into an already-allocated C buffer, use <code>GetString-Region</code> or <code>GetStringUTFRegion</code>.</font>
+</p>
+
+
+<p>
+  <a name="27748"> </a>For small fixed-size strings, <code>Get/SetStringRegion</code> and <code>Get/SetString-UTFRegion</code> are almost always the preferred functions because the C buffer can be allocated on the C stack very cheaply. The overhead of copying a small number of characters in the string is negligible.</font>
+</p>
+
+
+<p>
+  <a name="28406"> </a>One advantage of <code>Get/SetStringRegion</code> and <code>Get/SetStringUTFRegion</code> is that they do not perform memory allocation, and therefore never raise unexpected out-of-memory exceptions. No exception checking is necessary if you make sure that index overflow cannot occur.</font>
+</p>
+
+
+<p>
+  <a name="27454"> </a>Another advantage of <code>Get/SetStringRegion</code> and <code>Get/SetStringUTF-Region</code> is that the you can specify a starting index and the number of characters. These functions are suitable if the native code only needs to access a subset of characters in a long string. </font>
+</p>
+
+
+<p>
+  <a name="27341"> </a><code>GetStringCritical</code> must be used with extreme care (<a href="objtypes.html#30934">&#167;3.2.5</a>). You must make sure that while holding a pointer obtained through <code>GetStringCritical</code>, the native code does not allocate new objects in the Java virtual machine or perform other blocking calls that may cause the system to deadlock.</font>
+</p>
+
+
+<p>
+  <a name="27565"> </a>Here is an example that demonstrates the subtle issues in the use of <code>GetStringCritical</code>. The following code obtains the content of a string and calls the <code>fprintf</code> function to write out the characters to the file handle <code>fd</code>:</font>
+</p>
+
+<pre>
+<a name="27566"> </a>/* This is not safe! */
+<a name="27571"> </a>const char *c_str = (*env)-&gt;GetStringCritical(env, j_str, 0);
+<a name="27567"> </a>if (c_str == NULL) {
+<a name="28608"> </a>    ... /* error handling */
+<a name="28609"> </a>}
+<a name="27568"> </a>fprintf(fd, "%s\n", c_str);
+<a name="27569"> </a>(*env)-&gt;ReleaseStringCritical(env, j_str, c_str);
+</pre>
+
+<p>
+  <a name="27575"> </a>The problem with the above code is that it is not always safe to write to a file handle when garbage collection is disabled by the current thread. Suppose, for example, that another thread <code>T</code> is waiting to read from the <code>fd</code> file handle. Let us further assume that the operating system buffering is set up in such a way that the <code>fprintf</code> call waits until the thread <code>T</code> finishes reading all pending data from <code>fd</code>. We have constructed a possible scenario for deadlocks: If thread <code>T</code> cannot allocate enough memory to serve as a buffer for reading from the file handle, it must request a garbage collection. The garbage collection request will be blocked until the current thread executes <code>ReleaseStringCritical</code>, which cannot happen until the <code>fprintf</code> call returns. The <code>fprintf</code> call is waiting, however, for thread <code>T</code> to finish reading from the file handle.</font>
+</p>
+
+
+<p>
+  <a name="27570"> </a>The following code, although similar to the example above, is almost certainly deadlock free:</font>
+</p>
+
+<pre>
+<a name="27586"> </a>/* This code segment is OK. */
+<a name="27587"> </a>const char *c_str = (*env)-&gt;GetStringCritical(env, j_str, 0);
+<a name="27588"> </a>if (c_str == NULL) {
+<a name="28936"> </a>   ... /* error handling */
+<a name="28937"> </a>}
+<a name="27589"> </a>DrawString(c_str);
+<a name="27590"> </a>(*env)-&gt;ReleaseStringCritical(env, j_str, c_str);
+</pre>
+
+<p>
+  <a name="27599"> </a><code>DrawString</code> is a system call that directly writes the string onto the screen. Unless the screen display driver is also a Java application running in the same virtual machine, the <code>DrawString</code> function will not block indefinitely waiting for garbage collection to happen.</font>
+</p>
+
+
+<p>
+  <a name="27611"> </a>In summary, you need to consider all possible blocking behavior between a pair of <code>Get/ReleaseStringCritical</code> calls.</font>
+</p>
+
+<a name="27346"></a>
+<h2>3.3    Accessing Arrays</h2>
+
+<p>
+  <a name="5268"> </a>The JNI treats <em>primitive arrays</em> and <em>object arrays</em> differently. Primitive arrays contain elements that are of primitive types such as <code>int</code> and <code>boolean</code>. Object arrays contain elements that are of reference types such as class instances and other arrays. For example, in the following code segment written in the Java programming language:</font>
+</p>
+
+<pre>
+<a name="31161"> </a>int[] iarr;
+<a name="31162"> </a>float[] farr;
+<a name="31163"> </a>Object[] oarr;
+<a name="31164"> </a>int[][] arr2;
+</pre>
+
+<p>
+  <a name="31165"> </a><code>iarr</code> and <code>farr</code> are primitive arrays, whereas <code>oarr</code> and <code>arr2</code> are object arrays.</font>
+</p>
+
+
+<p>
+  <a name="27349"> </a>Accessing primitive arrays in a native method requires the use of JNI functions similar to those used for accessing strings. Let us look at a simple example. The following program calls a native method <code>sumArray</code> that adds up the contents of an <code>int</code> array.</font>
+</p>
+
+<pre>
+<a name="4057"> </a>class IntArray {
+<a name="4058"> </a>    private native int sumArray(int[] arr);
+<a name="4059"> </a>    public static void main(String[] args) {
+<a name="4060"> </a>        IntArray p = new IntArray();
+<a name="4061"> </a>        int arr[] = new int[10];
+<a name="4062"> </a>        for (int i = 0; i &lt; 10; i++) {
+<a name="4063"> </a>            arr[i] = i;
+<a name="5263"> </a>        }
+<a name="4064"> </a>        int sum = p.sumArray(arr);
+<a name="4065"> </a>        System.out.println("sum = " + sum);
+<a name="4066"> </a>    }
+<a name="4067"> </a>    static {
+<a name="4068"> </a>        System.loadLibrary("IntArray");
+<a name="4069"> </a>    }
+<a name="4070"> </a>}
+</pre>
+<a name="5279"></a>
+<h3>3.3.1    Accessing Arrays in C</h3>
+
+<p>
+  <a name="11562"> </a>Arrays are represented by the <code>jarray</code> reference type and its "subtypes" such as <code>jintArray</code>. Just as <code>jstring</code> is not a C string type, neither is <code>jarray</code> a C array type. You cannot implement the <code>Java_IntArray_sumArray</code> native method by indirecting through a <code>jarray</code> reference. The following C code is illegal and would not produce the desired results:</font>
+</p>
+
+<pre>
+<a name="4072"> </a>/* This program is illegal! */
+<a name="4073"> </a>JNIEXPORT jint JNICALL 
+<a name="5292"> </a>Java_IntArray_sumArray(JNIEnv *env, jobject obj, jintArray arr)
+<a name="4074"> </a>{
+<a name="4075"> </a>    int i, sum = 0;
+<a name="4076"> </a>    for (i = 0; i &lt; 10; i++) {
+<a name="4077"> </a>        sum += arr[i];
+<a name="5291"> </a>    }
+<a name="5296"> </a>}
+</pre>
+
+<p>
+  <a name="5298"> </a>You must instead use the proper JNI functions to access primitive array elements, as shown in the following corrected example:</font>
+</p>
+
+<pre>
+<a name="4086"> </a>JNIEXPORT jint JNICALL 
+<a name="4087"> </a>Java_IntArray_sumArray(JNIEnv *env, jobject obj, jintArray arr)
+<a name="4088"> </a>{
+<a name="5309"> </a>    jint buf[10];
+<a name="4090"> </a>    jint i, sum = 0;
+<a name="5310"> </a>    (*env)-&gt;GetIntArrayRegion(env, arr, 0, 10, buf);
+<a name="4092"> </a>    for (i = 0; i &lt; 10; i++) {
+<a name="4093"> </a>        sum += buf[i];
+<a name="9668"> </a>    }
+<a name="4095"> </a>    return sum;
+<a name="4096"> </a>}
+</pre>
+<a name="4099"></a>
+<h3>3.3.2    Accessing Arrays of Primitive Types</h3>
+
+<p>
+  <a name="27772"> </a>The previous example uses the <code>GetIntArrayRegion</code> function to copy all the elements in the integer array into a C buffer (<code>buf</code>). The third argument is the starting index of the elements, and the fourth argument is the number of elements to be copied. Once the elements are in the C buffer, we can access them in native code. No exception checking is necessary because we know that 10 is the length of the array in our example, and thus there cannot be an index overflow.</font>
+</p>
+
+
+<p>
+  <a name="5339"> </a>The JNI supports a corresponding <code>SetIntArrayRegion</code> function that allows native code to modify the array elements of type <code>int</code>. Arrays of other primitive types (such as <code>boolean</code>, <code>short</code>, and <code>float</code>) are also supported.</font>
+</p>
+
+
+<p>
+  <a name="27793"> </a>The JNI supports a family of <font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Get/Release&lt;Type&gt;ArrayElements</font> functions (including, for example, <code>Get/ReleaseIntArrayElements</code>) that allow the native code to obtain a direct pointer to the elements of primitive arrays. Because the underlying garbage collector may not support pinning, the virtual machine may return a pointer to a copy of the original primitive array. We can rewrite the native method implementation in Section <a href="objtypes.html#5279">3.3.1</a> using <code>GetIntArrayElements</code> as follows:</font>
+</p>
+
+<pre>
+<a name="27797"> </a>JNIEXPORT jint JNICALL 
+<a name="27798"> </a>Java_IntArray_sumArray(JNIEnv *env, jobject obj, jintArray arr)
+<a name="27799"> </a>{
+<a name="27800"> </a>    jint *carr;
+<a name="27801"> </a>    jint i, sum = 0;
+<a name="27802"> </a>    carr = (*env)-&gt;GetIntArrayElements(env, arr, NULL);
+<a name="27803"> </a>    if (carr == NULL) {
+<a name="27804"> </a>        return 0; /* exception occurred */
+<a name="27805"> </a>    }
+<a name="27806"> </a>    for (i=0; i&lt;10; i++) {
+<a name="27807"> </a>        sum += carr[i];
+<a name="27808"> </a>    }
+<a name="27809"> </a>    (*env)-&gt;ReleaseIntArrayElements(env, arr, carr, 0);
+<a name="27810"> </a>    return sum;
+<a name="27811"> </a>}
+</pre>
+
+<p>
+  <a name="27367"> </a>The <code>GetArrayLength</code> function returns the number of elements in primitive or object arrays. The fixed length of an array is determined when the array is first allocated.</font>
+</p>
+
+
+<p>
+  <a name="5344"> </a>Java 2 SDK release 1.2 introduces <code>Get/ReleasePrimitiveArrayCritical</code> functions. These functions allow virtual machines to disable garbage collection while the native code accesses the contents of primitive arrays. Programmers must apply the same kind of care as when using <code>Get/ReleaseStringCritical</code> functions (<a href="objtypes.html#5161">&#167;3.2.4</a>). Between a pair of <code>Get/ReleasePrimitiveArrayCritical</code> functions, the native code must not call arbitrary JNI functions, or perform any blocking operations that may cause the application to deadlock.</font>
+</p>
+
+<a name="27761"></a>
+<h3>3.3.3    Summary of JNI Primitive Array Functions</h3>
+
+<p>
+  <a name="27002"> </a>Table <a href="objtypes.html#44093">3.2</a> is a summary of all JNI functions related to primitive arrays. Java 2 SDK release 1.2 adds a number of new functions that enhance performance for certain array operations. The added functions do not support new operations other than bringing performance improvements.</font>
+</p>
+
+<a name="44093"></a>
+<blockquote><i>Summary of JNI Primitive Array Functions<p>
+<table border="1" bordercolorlight="#FFFFFF" bordercolordark="#000000"
+       cellpadding="5" cellspacing="0">
+  <caption ALIGN="left"><b><font face="Arial, Verdana, Helvetica, sans-serif" size="-1"></font></b></caption>
+  <tr bgcolor="#CCCCCC"><div align="center">
+    <th><font face="Arial, Verdana, Helvetica, sans-serif" color="#663300">
+<a name="26948"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JNI Function<br></font>
+
+</font></th>
+    <th><font face="Arial, Verdana, Helvetica, sans-serif" color="#663300">
+<a name="26950"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Description<br></font>
+
+</font></th>
+    <th><font face="Arial, Verdana, Helvetica, sans-serif" color="#663300">
+<a name="26952"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Since<br></font>
+
+</font></th>
+  </div></tr>
+  <tr>
+    <td>
+
+<a name="26954"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Get&lt;Type&gt;ArrayRegion</font><br></font>
+
+
+<a name="26955"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Set&lt;Type&gt;ArrayRegion</font><br></font>
+
+</td>
+    <td>
+
+<a name="26957"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Copies the contents of primitive arrays to or from a pre-allocated C buffer.<br></font>
+
+</td>
+    <td>
+
+<a name="26959"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="26961"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Get&lt;Type&gt;ArrayElements</font><br></font>
+
+
+<a name="26962"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Release&lt;Type&gt;ArrayElements</font><br></font>
+
+</td>
+    <td>
+
+<a name="26964"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Obtains a pointer to the contents of a primitive array. May return a copy of the array.<br></font>
+
+</td>
+    <td>
+
+<a name="26966"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="27397"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>GetArrayLength</code><br></font>
+
+</td>
+    <td>
+
+<a name="27399"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Returns the number of elements in the array.<br></font>
+
+</td>
+    <td>
+
+<a name="27401"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="26968"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">New&lt;Type&gt;Array</font><br></font>
+
+</td>
+    <td>
+
+<a name="26970"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Creates an array with the given length.<br></font>
+
+</td>
+    <td>
+
+<a name="26972"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">JDK1.1<br></font>
+
+</td>
+  </tr>
+  <tr>
+    <td>
+
+<a name="26980"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>GetPrimitiveArrayCritical</code><br></font>
+
+
+<a name="26981"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif"><code>ReleasePrimitiveArrayCritical</code><br></font>
+
+</td>
+    <td>
+
+<a name="26983"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Obtains or releases a pointer to the contents of a primitive array. May disable garbage collection, or return a copy of the array.<br></font>
+
+</td>
+    <td>
+
+<a name="26987"> </a><font  size="2" face="Arial, Verdana, Helvetica, sans-serif">Java 2 SDK1.2<br></font>
+
+</td>
+  </tr>
+</table>
+
+
+</p>
+<br></blockquote></i>
+<a name="11551"></a>
+<h3>3.3.4    Choosing among the Primitive Array Functions</h3>
+
+<p>
+  <a name="27048"> </a>Figure <a href="objtypes.html#27187">3.3</a><a href="objtypes.html#27191"></a> illustrates how a programmer may choose among JNI functions for accessing primitive arrays in JDK release 1.1 and Java 2 SDK release 1.2:</font>
+</p>
+
+
+<p>
+  <a name="27191"> </a><img src="objtypes3.gif" height="369" width="500" align="center" border="0" hspace="0" vspace="0">
+</font>
+</p>
+
+<a name="27187"> </a><b>Figure 3.3	</b>&nbsp;&nbsp;Choosing among Primitive Array Functions</font><p>
+<p>
+  <a name="11552"> </a>If you need to copy to or copy from a preallocated C buffer, use the <code>Get/Set&lt;Type&gt;ArrayRegion</code> family of functions. These functions perform bounds checking and raise <code>ArrayIndexOutOfBoundsException</code> exceptions when necessary. The native method implementation in Section <a href="objtypes.html#5279">3.3.1</a> uses <code>GetIntArray-Region</code> to copy 10 elements out of a <code>jarray</code> reference.</font>
+</p>
+
+
+<p>
+  <a name="27770"> </a>For small, fixed-size arrays, <code>Get/Set&lt;Type&gt;ArrayRegion</code> is almost always the preferred function because the C buffer can be allocated on the C stack very cheaply. The overhead of copying a small number of array elements is negligible.</font>
+</p>
+
+
+<p>
+  <a name="27428"> </a>The <code>Get/Set&lt;Type&gt;ArrayRegion</code> functions allow you to specify a starting index and number of elements, and are thus the preferred functions if the native code needs to access only a subset of elements in a large array. </font>
+</p>
+
+
+<p>
+  <a name="11585"> </a>If you do not have a preallocated C buffer, the primitive array is of undetermined size and the native code does not issue blocking calls while holding the pointer to array elements, use the <code>Get/ReleasePrimitiveArrayCritical</code> functions in Java 2 SDK release 1.2. Just like the <code>Get/ReleaseStringCritical</code> functions, the <code>Get/ReleasePrimitiveArrayCritical</code> functions must be used with extreme care in order to avoid deadlocks.</font>
+</p>
+
+
+<p>
+  <a name="27272"> </a>It is always safe to use the <code>Get/Release&lt;type&gt;ArrayElements</code> family of functions. The virtual machine either returns a direct pointer to the array elements, or returns a buffer that holds a copy of the array elements.</font>
+</p>
+
+<a name="27791"></a>
+<h3>3.3.5    Accessing Arrays of Objects</h3>
+
+<p>
+  <a name="5341"> </a>The JNI provides a separate pair of functions to access objects arrays. <code>GetObject-ArrayElement</code> returns the element at a given index, whereas <code>SetObjectArray-Element</code> updates the element at a given index. Unlike the situation with primitive array types, you cannot get all the object elements or copy multiple object elements at once.</font>
+</p>
+
+
+<p>
+  <a name="10425"> </a>Strings and arrays are of reference types. You use <code>Get/SetObjectArray-Element</code> to access arrays of strings and arrays of arrays.</font>
+</p>
+
+
+<p>
+  <a name="12479"> </a>The following example calls a native method to create a two-dimensional array of <code>int</code> and then prints the content of the array.</font>
+</p>
+
+<pre>
+<a name="31186"> </a>class ObjectArrayTest {
+<a name="31187"> </a>    private static native int[][] initInt2DArray(int size);
+<a name="31188"> </a>    public static void main(String[] args) {
+<a name="31190"> </a>        int[][] i2arr = initInt2DArray(3);
+<a name="31313"> </a>        for (int i = 0; i &lt; 3; i++) {
+<a name="31314"> </a>            for (int j = 0; j &lt; 3; j++) {
+<a name="31315"> </a>                 System.out.print(" " + i2arr[i][j]);
+<a name="31316"> </a>            }
+<a name="31317"> </a>            System.out.println();
+<a name="31318"> </a>        }
+<a name="31189"> </a>    }
+<a name="31210"> </a>    static {
+<a name="31212"> </a>        System.loadLibrary("ObjectArrayTest");
+<a name="31211"> </a>    }
+<a name="31200"> </a>}
+</pre>
+
+<p>
+  <a name="31213"> </a>The static native method <code>initInt2DArray</code> creates a two-dimensional array of the given size. The native method that allocates and initializes the two-dimensional array may be written as follows:</font>
+</p>
+
+
+<p>
+  <a name="49748"> </a></font>
+</p>
+
+
+<p>
+  <a name="49749"> </a></font>
+</p>
+
+
+<p>
+  <a name="49750"> </a></font>
+</p>
+
+
+<p>
+  <a name="49751"> </a></font>
+</p>
+
+
+<p>
+  <a name="49752"> </a></font>
+</p>
+
+
+<p>
+  <a name="49753"> </a></font>
+</p>
+
+
+<p>
+  <a name="49754"> </a></font>
+</p>
+
+<pre>
+<a name="31215"> </a>JNIEXPORT jobjectArray JNICALL
+<a name="31216"> </a>Java_ObjectArrayTest_initInt2DArray(JNIEnv *env,
+<a name="31273"> </a>                                   jclass cls,
+<a name="31272"> </a>                                   int size)
+<a name="31217"> </a>{
+<a name="31233"> </a>    jobjectArray result;
+<a name="31246"> </a>    int i;
+<a name="31228"> </a>    jclass intArrCls = (*env)-&gt;FindClass(env, "[I");
+<a name="31229"> </a>    if (intArrCls == NULL) {
+<a name="34689"> </a>        return NULL; /* exception thrown */
+<a name="31230"> </a>    }
+<a name="31225"> </a>    result = (*env)-&gt;NewObjectArray(env, size, intArrCls,
+<a name="61029"> </a>                                    NULL);
+<a name="31238"> </a>    if (result == NULL) {
+<a name="34697"> </a>        return NULL; /* out of memory error thrown */
+<a name="31241"> </a>    }
+<a name="31247"> </a>    for (i = 0; i &lt; size; i++) {
+<a name="31328"> </a>        jint tmp[256];  /* make sure it is large enough! */
+<a name="31327"> </a>        int j;
+<a name="31249"> </a>        jintArray iarr = (*env)-&gt;NewIntArray(env, size);
+<a name="31250"> </a>        if (iarr == NULL) {
+<a name="34705"> </a>            return NULL; /* out of memory error thrown */
+<a name="31253"> </a>        }
+<a name="31329"> </a>        for (j = 0; j &lt; size; j++) {
+<a name="31330"> </a>            tmp[j] = i + j;
+<a name="31331"> </a>        }
+<a name="31332"> </a>        (*env)-&gt;SetIntArrayRegion(env, iarr, 0, size, tmp);
+<a name="31257"> </a>        (*env)-&gt;SetObjectArrayElement(env, result, i, iarr);
+<a name="31258"> </a>        (*env)-&gt;DeleteLocalRef(env, iarr);
+<a name="31248"> </a>    }
+<a name="31242"> </a>    return result;
+<a name="31222"> </a>}
+</pre>
+
+<p>
+  <a name="31277"> </a>The <code>newInt2DArray</code> method first calls the JNI function <code>FindClass</code> to obtain a reference of the element class of the two-dimensional <code>int</code> array. The "<code>[I</code>" argument to <code>FindClass</code> is the <em>JNI class descriptor</em> (<a href="types.html#65751">&#167;12.3.2</a>) that corresponds to the <code>int[]</code> type in the Java programming language. <code>FindClass</code> returns <code>NULL</code> and throws an exception if class loading fails (due to, for example, a missing class file or an out-of-memory condition).</font>
+</p>
+
+
+<p>
+  <a name="31373"> </a>Next the <code>NewObjectArray</code> function allocates an array whose element type is denoted by the <code>intArrCls</code> class reference. The <code>NewObjectArray</code> function only allocates the first dimension, and we are still left with the task of filling in the array elements that constitute the second dimension. The Java virtual machine has no special data structure for multi-dimensional arrays. A two-dimensional array is simply an array of arrays.</font>
+</p>
+
+
+<p>
+  <a name="31382"> </a>The code that creates the second dimension is quite straightforward. <code>NewInt-Array</code> allocates the individual array elements, and <code>SetIntArrayRegion</code> copies the contents of the <code>tmp[]</code> buffer into the newly allocated one-dimensional arrays. After completing the <code>SetObjectArrayElement</code> call, the <code>j</code>th element of the <code>i</code>th one-dimensional array has value <code>i+j</code>.</font>
+</p>
+
+
+<p>
+  <a name="34726"> </a>Running the <code>ObjectArrayTest.main</code> method produces the following output:</font>
+</p>
+
+<pre>
+<a name="31397"> </a> 0 1 2
+<a name="31398"> </a> 1 2 3
+<a name="31399"> </a> 2 3 4
+</pre>
+
+<p>
+  <a name="31393"> </a>The <code>DeleteLocalRef</code> call at the end of the loop ensures that the virtual machine does not run out of the memory used to hold JNI references such as <code>iarr</code>. Section <a href="refs.html#27570">5.2.1</a> explains in detail when and why you need to call <code>DeleteLocalRef</code>.</font>
+</p>
+
+
+
+<hr>
+<!-- This inserts footnotes--><p>
+<table border="0" width="100%">
+<tr>
+<td><a href="jniTOC.html">Contents</a> | <a href="part2.html">Prev</a> | <a href="fldmeth.html">Next</a> | <a href="jniIX.html">Index</a></td>
+<td align=right><i>The Java Native Interface<br>
+Programmer's Guide and Specification</i>
+</td></tr></table>
+<p>
+<font size="-1"><i><a href="copyright.html">Copyright</a> &#169 2002 Sun Microsystems, Inc.
+All rights reserved</i>
+<br>
+Please send any comments or corrections to <a href="mailto:jni@java.sun.com">jni@java.sun.com</a>
+</font>
+<script language="JavaScript" src="/js/omi/jsc/s_code_remote.js"></script></body></html>

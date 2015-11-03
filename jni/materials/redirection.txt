@@ -1,0 +1,31 @@
+http://stackoverflow.com/questions/5483068/jni-connecting-stdout-to-a-jtextarea
+
+std::stringbuf str; 
+std::streambuf* save = std::cout.rdbuf(); 
+std::cout.rdbuf(&str); // the output... 
+std::cout.rdbuf(save); // Better would be to use RAII 
+
+// Now convert str.str() to a Java string. ` Of course, if your code is outputting to an std::ostream, like it should be, there's no problem: just use std::ostringstream
+
+
+http://cboard.cprogramming.com/c-programming/86580-stdout-jni.html
+	JNIEnv* env;
+	stream = freopen("file.txt", "w", stdout);
+	env = create_vm();
+  
+
+http://www.velocityreviews.com/forums/t635861-redirect-cout-and-cerr-to-system-out-and-system-err.html
+http://www.vajhoej.dk/arne/eksperten/jniredirect/
+
+
+http://de.w3support.net/index.php?db=so&id=573724
+#include <stdio.h>
+
+int main()
+{
+  freopen ("myfile.txt", "w", stdout);
+  printf ("This is redirected to a file");
+  fclose (stdout);
+  return 0;
+}
+

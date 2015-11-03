@@ -1,0 +1,5 @@
+http://android.git.kernel.org/
+
+[platform/system/core.git] / libcutils / Android.mk
+[platform/system/core.git] / liblog / Android.mk
+

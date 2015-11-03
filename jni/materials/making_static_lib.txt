@@ -1,0 +1,1 @@
+http://stackoverflow.com/questions/2943828/how-to-compile-a-static-library-using-the-android-ndk
