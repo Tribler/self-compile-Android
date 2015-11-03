@@ -1,7 +1,10 @@
-# Dependencies:
+# Self-compiling Android application (Experimental)
 
+Disclaimer: only works on Android 4.3_r3.1 with Galaxy Nexus. Or Cyanogenmod 12.1 of android 5.1.1, comfirmed on Nexus 5,6 and 10 devices.
 
-## JAVA
+## Dependencies:
+
+### JAVA
 
 platform  -> android-18.jar
 compiler  -> ecj-4.5.jar
@@ -17,7 +20,7 @@ signer    -> zipsigner-lib-1.17.jar
              sc-pg-1.52.0.0.jar
 
 
-## NATIVE
+### NATIVE
 
 aapt      -> Platform_Framework_Base\tools\aapt
 aidl      -> Platform_Framework_Base\tools\aidl
@@ -50,7 +53,7 @@ ld        -> Tool_Chain_Utils\binutils-2.25\ld
 
 
 
-# STABLE APIs (at least api level 9)
+## STABLE APIs (at least api level 9)
 
 https://developer.android.com/ndk/guides/stable_apis.html#a18
 
