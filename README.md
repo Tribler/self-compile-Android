@@ -1,6 +1,13 @@
 # Self-compiling Android application (Experimental)
 
-Disclaimer: only works on Android 4.3_r3.1 with Galaxy Nexus. Or Cyanogenmod 12.1 of android 5.1.1, comfirmed on Nexus 5,6 and 10 devices.
+_Disclaimer: only works on Android 4.3_r3.1 with Galaxy Nexus. Or Cyanogenmod 12.1 of android 5.1.1, comfirmed on Nexus 5,6 and 10 devices._
+
+## Autonomous smartphone apps: self-compilation, mutation, and viral spreading
+
+Abstract [from the scientific paper](http://arxiv.org/abs/1511.00444):
+We present the first smart phone tool that is capable of self-compilation, mutation and viral spreading. Our autonomous app does not require a host computer to alter its functionality, change its appearance and lacks the normal necessity of a central app store to spread among hosts. We pioneered survival skills for mobile software in order to overcome disrupted Internet access due to natural disasters and human made interference, like Internet kill switches or censored networks. Internet kill switches have proven to be an effective tool to eradicate open Internet access and all forms of digital communication within an hour on a country-wide basis. We present the first operational tool that is capable of surviving such digital eradication.
+
+{Part of [Tribler](https://github.com/Tribler/tribler/wiki): 82 contributing developers so far, 1.7 unique users installs to date}
 
 ## Dependencies:
 
