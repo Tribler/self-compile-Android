@@ -102,7 +102,7 @@ Package app:
 Prepare installation step:
 ![screenshot_2015-09-18-17-12-52](https://cloud.githubusercontent.com/assets/325224/11036186/36335ac2-86f7-11e5-86c2-0825081163e7.png)
 
-The magic happens. Without any user intervention it asks for a freshly compiled clone of itself to be installed.
+The magic happens. Without any user intervention it asks for a freshly compiled clone of itself to be installed.:
 ![screenshot_2015-09-18-17-13-11](https://cloud.githubusercontent.com/assets/325224/11036195/47464838-86f7-11e5-81b8-e864770b6b80.png)
 
 User selected "install"
