@@ -87,28 +87,28 @@ Changing icon and app name:
 <selecting install> First self compile step, process resources
 ![screenshot_2015-09-18-16-48-49](https://cloud.githubusercontent.com/assets/325224/11036087/94ab786a-86f6-11e5-8fd0-7d80bc7cc0bf.png)
 
-Compile source:
+Compile source:             
 ![screenshot_2015-09-18-16-49-29](https://cloud.githubusercontent.com/assets/325224/11036127/df87e2ec-86f6-11e5-949c-30bdef86fdc7.png)
 
-Integrate dependencies:
+Integrate dependencies:             
 ![screenshot_2015-09-18-16-49-34](https://cloud.githubusercontent.com/assets/325224/11036134/e9d18a96-86f6-11e5-802e-6264b16869e6.png)
 
-(this takes a while)
+(this takes a while)             
 ![screenshot_2015-09-18-16-50-09](https://cloud.githubusercontent.com/assets/325224/11036144/f9adf6ac-86f6-11e5-850e-c7d1f832a3c2.png)
 
-Package app:
+Package app:             
 ![screenshot_2015-09-18-16-55-49](https://cloud.githubusercontent.com/assets/325224/11036171/1d61e77a-86f7-11e5-8093-967457113539.png)
 
-Prepare installation step:
+Prepare installation step:             
 ![screenshot_2015-09-18-17-12-52](https://cloud.githubusercontent.com/assets/325224/11036186/36335ac2-86f7-11e5-86c2-0825081163e7.png)
 
 The magic happens. Without any user intervention it asks for a freshly compiled clone of itself to be installed.:
 ![screenshot_2015-09-18-17-13-11](https://cloud.githubusercontent.com/assets/325224/11036195/47464838-86f7-11e5-81b8-e864770b6b80.png)
 
-User selected "install"
+User selected "install"             
 ![screenshot_2015-09-18-17-13-20](https://cloud.githubusercontent.com/assets/325224/11036216/79505eea-86f7-11e5-9f5e-8161f4d325ad.png)
 
-Install completed
+Install completed             
 ![screenshot_2015-09-18-17-17-40](https://cloud.githubusercontent.com/assets/325224/11036218/84dd015a-86f7-11e5-8414-57d6a9570d21.png)
 
 Finally open the self-compiled clone of itself. 
